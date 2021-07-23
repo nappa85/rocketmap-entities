@@ -1,5 +1,5 @@
 
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use serde_json::value::Value;
 
@@ -172,7 +172,7 @@ impl<'de> Deserialize<'de> for Gender {
     {
         let value = u8::deserialize(deserializer)?;
 
-        // Rust does not come with a simple way of converting a
+        // serde does not come with a simple way of converting a
         // number to an enum, so use a big `match`.
         match value {
             0 => Ok(Gender::Unset),
@@ -184,7 +184,14 @@ impl<'de> Deserialize<'de> for Gender {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+impl Serialize for Gender {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let temp = self.get_id();
+        temp.serialize(serializer)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct PvpRanking {
     pub rank: Option<u16>,
