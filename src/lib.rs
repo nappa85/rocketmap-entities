@@ -138,6 +138,14 @@ pub enum Gender {
 }
 
 impl Gender {
+    pub fn get_id(&self) -> u8 {
+        match self {
+            Gender::Unset => 0,
+            Gender::Male => 1,
+            Gender::Female => 2,
+            Gender::Genderless => 3,
+        }
+    }
     pub fn get_glyph(&self) -> String {
         match self {
             Gender::Male => unsafe { String::from_utf8_unchecked(vec![0xe2, 0x99, 0x82]) },
@@ -162,7 +170,7 @@ impl<'de> Deserialize<'de> for Gender {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
     {
-        let value = usize::deserialize(deserializer)?;
+        let value = u8::deserialize(deserializer)?;
 
         // Rust does not come with a simple way of converting a
         // number to an enum, so use a big `match`.
