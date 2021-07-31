@@ -51,7 +51,6 @@ pub struct Pokemon {
     pub spawnpoint_id: String,
     pub encounter_id: String,
     pub pokemon_id: u16,
-    #[serde(default)]
     pub pokestop_id: Option<String>,
     pub latitude: f64,
     pub longitude: f64,
@@ -64,57 +63,31 @@ pub struct Pokemon {
     // spawn_start: i64,
     // spawn_end: i64,
     pub gender: Gender,
-    #[serde(default)]
     pub cp: Option<usize>,
-    #[serde(default)]
     pub form: Option<u16>,
-    #[serde(default)]
     pub costume: Option<usize>,
-    #[serde(default)]
     pub individual_attack: Option<u8>,
-    #[serde(default)]
     pub individual_defense: Option<u8>,
-    #[serde(default)]
     pub individual_stamina: Option<u8>,
-    #[serde(default)]
     pub cp_multiplier: Option<f64>,
-    #[serde(default)]
     pub move_1: Option<u16>,
-    #[serde(default)]
     pub move_2: Option<u16>,
-    #[serde(default)]
     pub weight: Option<f64>,
-    #[serde(default)]
     pub height: Option<f64>,
-    #[serde(default)]
     pub base_catch: Option<f64>,
-    #[serde(default)]
     pub great_catch: Option<f64>,
-    #[serde(default)]
     pub ultra_catch: Option<f64>,
-    #[serde(default)]
     pub boosted_weather: Option<usize>,
-    #[serde(default)]
     pub def_grade: Option<String>,
-    #[serde(default)]
     pub atk_grade: Option<String>,
-    #[serde(default)]
     pub rating_attack: Option<String>,
-    #[serde(default)]
     pub rating_defense: Option<String>,
-    #[serde(default)]
     pub catch_prob_1: Option<f64>,
-    #[serde(default)]
     pub catch_prob_2: Option<f64>,
-    #[serde(default)]
     pub catch_prob_3: Option<f64>,
-    #[serde(default)]
     pub weather: Option<u8>,
-    #[serde(default)]
     pub weather_boosted_condition: Option<usize>,
-    #[serde(default)]
     pub pokemon_level: Option<u8>,
-    #[serde(default)]
     pub s2_cell_id: Option<usize>,
     // player_level: u8,
     // verified: bool,
@@ -127,6 +100,7 @@ pub struct Pokemon {
     pub pvp_rankings_great_league: Option<Vec<PvpRanking>>,
     pub pvp_rankings_ultra_league: Option<Vec<PvpRanking>>,
     pub is_event: Option<bool>,
+    pub rarity: Option<u8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -213,16 +187,14 @@ pub struct Pokestop {
     pub longitude: f64,
     pub enabled: bool,
     pub last_modified: i64,
-    #[serde(default)]
     pub active_fort_modifier: Option<bool>,
-    #[serde(default)]
     pub lure_expiration: Option<i64>,
     pub pokestop_display: u8,
-    #[serde(default)]
     pub incident_expire_timestamp: Option<i64>,
     pub updated: i64,
     pub lure_id: u16,
     pub grunt_type: Option<u8>,
+    #[serde(alias = "is_ar_scan_eligible")]
     pub ar_scan_eligible: Option<bool>,
 }
 
@@ -245,6 +217,7 @@ pub struct Gym {
     pub raid_active_until: i64,
     pub ex_raid_eligible: bool,
     pub sponsor_od: Option<u8>,
+    #[serde(alias = "is_ar_scan_eligible")]
     pub ar_scan_eligible: Option<bool>,
 }
 
@@ -311,6 +284,7 @@ pub struct GymDetails {
     pub slots_available: u8,
     pub ex_raid_eligible: bool,
     pub sponsor_od: Option<u8>,
+    #[serde(alias = "is_ar_scan_eligible")]
     pub ar_scan_eligible: Option<bool>,
 }
 
@@ -351,25 +325,19 @@ pub struct Raid {
     pub start: i64,
     pub end: i64,
     pub level: u8,
-    #[serde(default)]
     pub pokemon_id: Option<u16>,
-    #[serde(default)]
     pub cp: Option<usize>,
-    #[serde(default)]
     pub move_1: Option<u16>,
-    #[serde(default)]
     pub move_2: Option<u16>,
-    #[serde(default)]
     pub weather: Option<usize>,
-    #[serde(default)]
     pub s2_cell_id: Option<usize>,
     pub ex_raid_eligible: bool,
-    #[serde(default)]
     pub form: Option<u16>,
     pub is_exclusive: bool,
     pub gender: Gender,
     pub sponsor_od: Option<u8>,
     pub evolution: Option<u8>,
+    #[serde(alias = "is_ar_scan_eligible")]
     pub ar_scan_eligible: Option<bool>,
 }
 
@@ -445,6 +413,7 @@ pub struct Quest {
     pub pokestop_id: String,
     pub pokestop_name: String,
     pub conditions: Value,
+    #[serde(alias = "is_ar_scan_eligible")]
     pub ar_scan_eligible: Option<bool>,
 }
 
@@ -453,6 +422,7 @@ pub struct Quest {
 pub struct Weather {
     pub latitude: f64,
     pub cloud_level: u8,
+    #[serde(alias = "alert_severity")]
     pub severity: u8,
     #[serde(deserialize_with = "deserialize_polygon")]
     pub polygon: Polygon<f64>,
@@ -579,7 +549,7 @@ pub struct Watch {
     pub point: Point<f64>,
     pub expire: i64,
     // #[serde(skip_deserializing)]
-    // #[serde(default)]
+    // 
     // pub reference_weather: Option<Weather>,
 }
 
