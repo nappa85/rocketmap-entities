@@ -101,6 +101,7 @@ pub struct Pokemon {
     pub pvp_rankings_ultra_league: Option<Vec<PvpRanking>>,
     pub is_event: Option<bool>,
     pub rarity: Option<u8>,
+    pub seen_type: Option<String>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
