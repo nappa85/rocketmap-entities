@@ -47,6 +47,35 @@ pub enum Request {
     DeviceTier(Box<DeviceTier>),
 }
 
+pub trait RequestId: std::fmt::Debug {
+    fn get_id(&self) -> Option<String> {
+        Some(format!("{:?}", self))
+    }
+}
+
+impl RequestId for Request {
+    fn get_id(&self) -> Option<String> {
+        match self {
+            Request::Pokemon(p) => p.get_id(),
+            Request::Pokestop(p) => p.get_id(),
+            Request::Gym(g) => g.get_id(),
+            Request::GymDetails(g) => g.get_id(),
+            Request::Raid(r) => r.get_id(),
+            Request::Scheduler(_) => None,
+            Request::Captcha(_) => None,
+            Request::Invasion(i) => i.get_id(),
+            Request::Quest(q) => q.get_id(),
+            Request::Weather(w) => w.get_id(),
+            Request::Account(_) => None,
+            Request::Reload(_) => None,
+            Request::ReloadCity(_) => None,
+            Request::StartWatch(_) => None,
+            Request::StopWatch(_) => None,
+            Request::DeviceTier(_) => None,
+        }
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(untagged)]
 enum StringOrInt {
@@ -168,6 +197,8 @@ pub struct Pokemon {
     pub seen_type: Option<String>,
 }
 
+impl RequestId for Pokemon {}
+
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Gender {
     Unset,
@@ -268,6 +299,19 @@ pub struct Pokestop {
     pub ar_scan_eligible: Option<bool>,
 }
 
+impl RequestId for Pokestop {
+    fn get_id(&self) -> Option<String> {
+        Some(format!(
+            "{}-{:?}-{:?}-{:?}-{:?}",
+            self.pokestop_id,
+            self.lure_expiration,
+            self.lure_id,
+            self.incident_expire_timestamp,
+            self.grunt_type,
+        ))
+    }
+}
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Gym {
@@ -296,6 +340,8 @@ pub struct Gym {
     #[serde(default)]
     pub ar_scan_eligible: Option<bool>,
 }
+
+impl RequestId for Gym {}
 
 #[derive(Clone, Debug)]
 pub enum Team {
@@ -369,6 +415,8 @@ pub struct GymDetails {
     pub ar_scan_eligible: Option<bool>,
 }
 
+impl RequestId for GymDetails {}
+
 // #[derive(Clone, Debug, Deserialize)]
 // #[serde(deny_unknown_fields)]
 // pub struct GymPokemon {
@@ -429,6 +477,8 @@ pub struct Raid {
     pub ar_scan_eligible: Option<bool>,
     pub costume: Option<usize>,
 }
+
+impl RequestId for Raid {}
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -509,6 +559,8 @@ pub struct Quest {
     pub quest_task: Option<String>,
 }
 
+impl RequestId for Quest {}
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Weather {
@@ -539,6 +591,8 @@ pub struct Weather {
     #[serde(default)]
     pub day: Option<bool>,
 }
+
+impl RequestId for Weather {}
 
 fn deserialize_polygon<'de, D>(data: D) -> Result<Polygon<f64>, D::Error>
 where
