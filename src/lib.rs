@@ -292,7 +292,7 @@ pub struct Pokestop {
     pub updated: i64,
     pub lure_id: Option<u16>,
     #[serde(alias = "incident_grunt_type")]
-    pub grunt_type: Option<u8>,
+    pub grunt_type: Option<u16>,
     #[serde(alias = "is_ar_scan_eligible")]
     #[serde(deserialize_with = "bool_or_int")]
     #[serde(default)]
