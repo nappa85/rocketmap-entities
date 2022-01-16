@@ -199,7 +199,20 @@ pub struct Pokemon {
     pub seen_type: Option<String>,
 }
 
-impl RequestId for Pokemon {}
+impl RequestId for Pokemon {
+    fn get_id(&self) -> Option<String> {
+        /*PoracleJSc
+        const verifiedSpawnTime = (hook.message.verified || hook.message.disappear_time_verified)
+        const cacheKey = `${hook.message.encounter_id}${verifiedSpawnTime ? 'T' : 'F'}${hook.message.cp}`
+        */
+        Some(format!(
+            "{}{}{}",
+            self.encounter_id,
+            if self.disappear_time_verified { 'T' } else { 'F' },
+            self.cp.unwrap_or_default(),
+        ))
+    }
+}
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Gender {
@@ -601,7 +614,27 @@ pub struct Weather {
     pub day: Option<bool>,
 }
 
-impl RequestId for Weather {}
+impl RequestId for Weather {
+    fn get_id(&self) -> Option<String> {
+        Some(format!(
+            "{:?}-{:?}-{:?}-{:?}-{:?}-{:?}-{:?}-{:?}-{:?}-{:?}-{:?}-{:?}-{:?}-{:?}",
+            self.cloud_level,
+            self.severity,
+            self.polygon,
+            self.special_effect_level,
+            self.id,
+            self.rain_level,
+            self.fog_level,
+            self.wind_direction,
+            self.snow_level,
+            self.warn_weather,
+            self.gameplay_condition,
+            self.wind_level,
+            self.s2_cell_id,
+            self.day,
+        ))
+    }
+}
 
 fn deserialize_polygon<'de, D>(data: D) -> Result<Polygon<f64>, D::Error>
 where
