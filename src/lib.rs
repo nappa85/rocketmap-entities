@@ -7,7 +7,7 @@ use chrono::{NaiveDate, Local};
 
 use geo::{LineString, Polygon, Point};
 
-use log::warn;
+use tracing::warn;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
