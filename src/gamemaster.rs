@@ -428,7 +428,7 @@ impl<'a> PvpHelper<'a> {
     }
     */
     fn get_pvp_stats(pokemon: &str, form: Option<&str>, iv: IV, level: f64, league: League) -> Option<Response> {
-        let stats = Self::get_top_pvp(pokemon, form, league);
+        let stats = Self::get_top_pvp(pokemon, form, league)?;
         let index = stats.iter().position(|value| {
             value.ivs.iter().any(|ivlevel| {
                 ivlevel.iv == iv && ivlevel.level >= level
@@ -584,7 +584,7 @@ impl<'a> PvpHelper<'a> {
 
         self.get_pvp_values_ordered(&self.stats[&info], league.get_cap())
     }
-    fn get_top_pvp(pokemon: &str, form: Option<&str>, league: League) -> Arc<Vec<Response>> {
+    fn get_top_pvp(pokemon: &str, form: Option<&str>, league: League) -> Option<Arc<Vec<Response>>> {
         let info = PokemonWithFormAndGender {
             pokemon: normalize(pokemon),
             form: form.map(normalize),
@@ -595,7 +595,7 @@ impl<'a> PvpHelper<'a> {
             League::Great => GREAT_LEAGUE.load(),
             League::Ultra => ULTRA_LEAGUE.load(),
         };
-        Arc::clone(&cache[&info])
+        Some(Arc::clone(cache.get(&info)?))
     }
 
     /*
