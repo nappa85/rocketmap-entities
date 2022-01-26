@@ -710,6 +710,17 @@ impl<PC, FC, CC> Deref for PokemonWithPvpInfo<PC, FC, CC> {
     }
 }
 
+impl<PC, FC, CC> From<crate::Pokemon> for PokemonWithPvpInfo<PC, FC, CC> {
+    fn from(inner: crate::Pokemon) -> Self {
+        PokemonWithPvpInfo {
+            inner,
+            _pc: PhantomData,
+            _fc: PhantomData,
+            _cc: PhantomData,
+        }
+    }
+}
+
 impl<'de, PC, FC, CC> Deserialize<'de> for PokemonWithPvpInfo<PC, FC, CC>
 where
     PC: Cache<Id=u16>,
