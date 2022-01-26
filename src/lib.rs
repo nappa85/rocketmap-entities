@@ -13,14 +13,13 @@ pub mod gamemaster;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields, tag = "type", content = "message", bound = "")] 
-pub enum Request<PC, FC, CC>
+pub enum Request<PC, FC>
 where
     PC: gamemaster::Cache<Id=u16>,
     FC: gamemaster::Cache<Id=u16>,
-    CC: gamemaster::Cache<Id=usize>,
 {
     #[serde(rename = "pokemon")]
-    Pokemon(Box<gamemaster::PokemonWithPvpInfo<PC, FC, CC>>),
+    Pokemon(Box<gamemaster::PokemonWithPvpInfo<PC, FC>>),
     #[serde(rename = "pokestop")]
     Pokestop(Box<Pokestop>),
     #[serde(rename = "gym")]
@@ -59,11 +58,10 @@ pub trait RequestId: std::fmt::Debug {
     }
 }
 
-impl<PC, FC, CC> RequestId for Request<PC, FC, CC>
+impl<PC, FC> RequestId for Request<PC, FC>
 where
     PC: gamemaster::Cache<Id=u16>,
     FC: gamemaster::Cache<Id=u16>,
-    CC: gamemaster::Cache<Id=usize>,
 {
     fn get_id(&self) -> Option<String> {
         match self {
@@ -168,7 +166,7 @@ pub struct Pokemon {
     pub gender: Gender,
     pub cp: Option<usize>,
     pub form: Option<u16>,
-    pub costume: Option<usize>,
+    pub costume: Option<u16>,
     pub individual_attack: Option<u8>,
     pub individual_defense: Option<u8>,
     pub individual_stamina: Option<u8>,
@@ -520,7 +518,7 @@ pub struct Raid {
     #[serde(deserialize_with = "bool_or_int")]
     #[serde(default)]
     pub ar_scan_eligible: Option<bool>,
-    pub costume: Option<usize>,
+    pub costume: Option<u16>,
 }
 
 impl RequestId for Raid {}
@@ -805,23 +803,10 @@ mod tests {
     use super::{Request, Weather};
 
     #[derive(Debug)]
-    struct FakeCache16;
+    struct FakeCache;
 
-    impl crate::gamemaster::Cache for FakeCache16 {
+    impl crate::gamemaster::Cache for FakeCache {
         type Id = u16;
-        fn get(_: Self::Id) -> Option<String> {
-            None
-        }
-        fn reverse(_: &str) -> Option<Self::Id> {
-            None
-        }
-    }
-
-    #[derive(Debug)]
-    struct FakeCache64;
-
-    impl crate::gamemaster::Cache for FakeCache64 {
-        type Id = usize;
         fn get(_: Self::Id) -> Option<String> {
             None
         }
@@ -841,7 +826,7 @@ mod tests {
         ];
         let mut weathers = Vec::new();
         for s in &strings {
-            let temps: Vec<Request<FakeCache16, FakeCache16, FakeCache64>> = serde_json::from_str(s).unwrap();
+            let temps: Vec<Request<FakeCache, FakeCache>> = serde_json::from_str(s).unwrap();
             for temp in temps {
                 if let Request::Weather(weather) = temp {
                     weathers.push(weather);

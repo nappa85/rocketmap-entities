@@ -363,11 +363,10 @@ impl League {
     }
 }
 
-fn pvp_ranking<PC, FC, CC>(pokemon: &crate::Pokemon, league: League) -> Pvp
+fn pvp_ranking<PC, FC>(pokemon: &crate::Pokemon, league: League) -> Pvp
 where
     PC: Cache<Id=u16>,
     FC: Cache<Id=u16>,
-    CC: Cache<Id=usize>,
 {
     let iv = IV {
         attack: pokemon.individual_attack?,
@@ -378,7 +377,7 @@ where
 
     let name = PC::get(pokemon.pokemon_id)?;
     let form = pokemon.form.and_then(FC::get);
-    let costume = pokemon.costume.and_then(CC::get);
+    let costume = pokemon.costume.and_then(FC::get);
 
     let pvp = PvpHelper::get_pvp_stats_with_evolutions(&name, form.as_deref(), pokemon.gender, costume.as_deref(), iv, level, league);
     if pvp.is_empty() {
@@ -696,48 +695,44 @@ impl<'a> PvpHelper<'a> {
 }
 
 #[derive(Clone, Debug)]
-pub struct PokemonWithPvpInfo<PC, FC, CC> {
+pub struct PokemonWithPvpInfo<PC, FC> {
     inner: crate::Pokemon,
     _pc: PhantomData<PC>,
     _fc: PhantomData<FC>,
-    _cc: PhantomData<CC>,
 }
 
-impl<PC, FC, CC> Deref for PokemonWithPvpInfo<PC, FC, CC> {
+impl<PC, FC> Deref for PokemonWithPvpInfo<PC, FC> {
     type Target = crate::Pokemon;
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
-impl<PC, FC, CC> From<crate::Pokemon> for PokemonWithPvpInfo<PC, FC, CC> {
+impl<PC, FC> From<crate::Pokemon> for PokemonWithPvpInfo<PC, FC> {
     fn from(inner: crate::Pokemon) -> Self {
         PokemonWithPvpInfo {
             inner,
             _pc: PhantomData,
             _fc: PhantomData,
-            _cc: PhantomData,
         }
     }
 }
 
-impl<'de, PC, FC, CC> Deserialize<'de> for PokemonWithPvpInfo<PC, FC, CC>
+impl<'de, PC, FC> Deserialize<'de> for PokemonWithPvpInfo<PC, FC>
 where
     PC: Cache<Id=u16>,
     FC: Cache<Id=u16>,
-    CC: Cache<Id=usize>,
 {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let mut pokemon = crate::Pokemon::deserialize(deserializer)?;
         if pokemon.pvp_rankings_great_league.is_none() && pokemon.pvp_rankings_ultra_league.is_none() {
-            pokemon.pvp_rankings_great_league = pvp_ranking::<PC, FC, CC>(&pokemon, League::Great);
-            pokemon.pvp_rankings_ultra_league = pvp_ranking::<PC, FC, CC>(&pokemon, League::Ultra);
+            pokemon.pvp_rankings_great_league = pvp_ranking::<PC, FC>(&pokemon, League::Great);
+            pokemon.pvp_rankings_ultra_league = pvp_ranking::<PC, FC>(&pokemon, League::Ultra);
         }
         Ok(PokemonWithPvpInfo {
             inner: pokemon,
             _pc: PhantomData,
             _fc: PhantomData,
-            _cc: PhantomData,
         })
     }
 }
@@ -751,9 +746,9 @@ pub trait Cache: std::fmt::Debug {
 #[cfg(test)]
 mod tests {
     #[derive(Debug)]
-    struct FakeCache16;
+    struct FakeCache;
 
-    impl crate::gamemaster::Cache for FakeCache16 {
+    impl crate::gamemaster::Cache for FakeCache {
         type Id = u16;
         fn get(id: Self::Id) -> Option<String> {
             match id {
@@ -770,26 +765,13 @@ mod tests {
         }
     }
 
-    #[derive(Debug)]
-    struct FakeCache64;
-
-    impl crate::gamemaster::Cache for FakeCache64 {
-        type Id = usize;
-        fn get(_: Self::Id) -> Option<String> {
-            None
-        }
-        fn reverse(_: &str) -> Option<Self::Id> {
-            None
-        }
-    }
-
     #[tokio::test]
     async fn it_works() {
         tracing_subscriber::fmt::try_init().ok();
         super::load_master_file().await.unwrap();
 
         let p: crate::Pokemon = serde_json::from_str(r#"{"individual_attack":6,"weight":1.804092288017273,"costume":0,"latitude":45.59854125668628,"weather":1,"pokestop_id":"d558c850604f41d5997a5adb37b366c0.16","display_pokemon_id":null,"encounter_id":"7657693126371544079","disappear_time":1599018063,"cp":890,"last_modified_time":1599017290,"pokemon_id":255,"capture_1":0.14569318294525146,"move_2":63,"capture_2":0.2103751301765442,"gender":1,"username":"Sot20aB0rn","spawnpoint_id":"68C62B17","form":0,"pokemon_level":33,"individual_stamina":9,"pvp_rankings_great_league":[{"rank":809,"percentage":0.8700643398554556,"level":40.0,"form":0,"cp":989,"pokemon":255},{"rank":351,"percentage":0.9607850542156611,"level":38.5,"pokemon":256,"form":0,"cp":1490},{"pokemon":257,"form":0,"percentage":null,"cp":null,"level":null,"rank":null}],"capture_3":0.27015984058380127,"shiny":false,"longitude":8.866217271528695,"is_event":false,"move_1":209,"first_seen":1599017274,"individual_defense":12,"disappear_time_verified":true,"pvp_rankings_ultra_league":[{"cp":989,"level":40.0,"pokemon":255,"form":0,"rank":809,"percentage":0.8700643398554556},{"form":0,"percentage":0.8929189209843369,"cp":1523,"level":40.0,"pokemon":256,"rank":684},{"pokemon":257,"percentage":0.9690298527207762,"form":0,"level":35.0,"cp":2489,"rank":558}],"height":0.2996796667575836}"#).unwrap();
-        assert_eq!(p.pvp_rankings_great_league, super::pvp_ranking::<FakeCache16, FakeCache16, FakeCache64>(&p, super::League::Great));
-        assert_eq!(p.pvp_rankings_ultra_league, super::pvp_ranking::<FakeCache16, FakeCache16, FakeCache64>(&p, super::League::Ultra));
+        assert_eq!(p.pvp_rankings_great_league, super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Great));
+        assert_eq!(p.pvp_rankings_ultra_league, super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Ultra));
     }
 }
