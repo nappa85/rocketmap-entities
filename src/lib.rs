@@ -9,12 +9,18 @@ use geo::{LineString, Polygon, Point};
 
 use tracing::warn;
 
+pub mod gamemaster;
+
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-#[serde(tag = "type", content = "message")]
-pub enum Request {
+#[serde(deny_unknown_fields, tag = "type", content = "message", bound = "")] 
+pub enum Request<PC, FC, CC>
+where
+    PC: gamemaster::Cache<Id=u16>,
+    FC: gamemaster::Cache<Id=u16>,
+    CC: gamemaster::Cache<Id=usize>,
+{
     #[serde(rename = "pokemon")]
-    Pokemon(Box<Pokemon>),
+    Pokemon(Box<gamemaster::PokemonWithPvpInfo<PC, FC, CC>>),
     #[serde(rename = "pokestop")]
     Pokestop(Box<Pokestop>),
     #[serde(rename = "gym")]
@@ -53,7 +59,12 @@ pub trait RequestId: std::fmt::Debug {
     }
 }
 
-impl RequestId for Request {
+impl<PC, FC, CC> RequestId for Request<PC, FC, CC>
+where
+    PC: gamemaster::Cache<Id=u16>,
+    FC: gamemaster::Cache<Id=u16>,
+    CC: gamemaster::Cache<Id=usize>,
+{
     fn get_id(&self) -> Option<String> {
         match self {
             Request::Pokemon(p) => p.get_id(),
@@ -214,7 +225,7 @@ impl RequestId for Pokemon {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum Gender {
     Unset,
     Male,
@@ -236,6 +247,18 @@ impl Gender {
             Gender::Male => unsafe { String::from_utf8_unchecked(vec![0xe2, 0x99, 0x82]) },
             Gender::Female => unsafe { String::from_utf8_unchecked(vec![0xe2, 0x99, 0x80]) },
             _ => String::new(),
+        }
+    }
+
+    pub fn from_str(s: &str) -> Self {
+        if s.eq_ignore_ascii_case("male") {
+            Gender::Male
+        }
+        else if s.eq_ignore_ascii_case("female") {
+            Gender::Female
+        }
+        else {
+            Gender::Unset
         }
     }
 }
@@ -276,7 +299,7 @@ impl Serialize for Gender {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct PvpRanking {
     pub rank: Option<u16>,
@@ -781,6 +804,32 @@ fn today() -> NaiveDate {
 mod tests {
     use super::{Request, Weather};
 
+    #[derive(Debug)]
+    struct FakeCache16;
+
+    impl crate::gamemaster::Cache for FakeCache16 {
+        type Id = u16;
+        fn get(_: Self::Id) -> Option<&'static str> {
+            None
+        }
+        fn reverse(_: &str) -> Self::Id {
+            0
+        }
+    }
+
+    #[derive(Debug)]
+    struct FakeCache64;
+
+    impl crate::gamemaster::Cache for FakeCache64 {
+        type Id = usize;
+        fn get(_: Self::Id) -> Option<&'static str> {
+            None
+        }
+        fn reverse(_: &str) -> Self::Id {
+            0
+        }
+    }
+
     #[test]
     fn entities() {
         let strings = [
@@ -792,7 +841,7 @@ mod tests {
         ];
         let mut weathers = Vec::new();
         for s in &strings {
-            let temps = serde_json::from_str::<Vec<Request>>(s).unwrap();
+            let temps: Vec<Request<FakeCache16, FakeCache16, FakeCache64>> = serde_json::from_str(s).unwrap();
             for temp in temps {
                 if let Request::Weather(weather) = temp {
                     weathers.push(weather);
