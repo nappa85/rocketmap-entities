@@ -495,8 +495,8 @@ impl<'a> PvpHelper<'a> {
             gender: None,
         };
         let stats = STATS.load();
-        let stat = &stats[&index];
-        if let Some(evolutions) = &stat.evolutions {
+        let stat = stats.get(&index);
+        if let Some(evolutions) = stat.and_then(|s| s.evolutions.as_ref()) {
             for evolution in evolutions {
                 if evolution.gender.is_none() || evolution.gender == Some(gender) {
                     result.extend(Self::get_pvp_stats_with_evolutions(&evolution.pokemon, form, gender, costume, iv, level, league));
