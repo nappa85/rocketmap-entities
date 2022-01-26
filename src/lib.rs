@@ -809,11 +809,11 @@ mod tests {
 
     impl crate::gamemaster::Cache for FakeCache16 {
         type Id = u16;
-        fn get(_: Self::Id) -> Option<&'static str> {
+        fn get(_: Self::Id) -> Option<String> {
             None
         }
-        fn reverse(_: &str) -> Self::Id {
-            0
+        fn reverse(_: &str) -> Option<Self::Id> {
+            None
         }
     }
 
@@ -822,11 +822,11 @@ mod tests {
 
     impl crate::gamemaster::Cache for FakeCache64 {
         type Id = usize;
-        fn get(_: Self::Id) -> Option<&'static str> {
+        fn get(_: Self::Id) -> Option<String> {
             None
         }
-        fn reverse(_: &str) -> Self::Id {
-            0
+        fn reverse(_: &str) -> Option<Self::Id> {
+            None
         }
     }
 

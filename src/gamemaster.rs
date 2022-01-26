@@ -380,20 +380,20 @@ where
     let form = pokemon.form.and_then(FC::get);
     let costume = pokemon.costume.and_then(CC::get);
 
-    let pvp = PvpHelper::get_pvp_stats_with_evolutions(name, form, pokemon.gender, costume, iv, level, league);
+    let pvp = PvpHelper::get_pvp_stats_with_evolutions(&name, form.as_deref(), pokemon.gender, costume.as_deref(), iv, level, league);
     if pvp.is_empty() {
         None
     }
     else {
-        Some(pvp.into_iter().map(|(p, r)| PvpRanking {
-            pokemon: PC::reverse(&p.pokemon),
-            form: p.form.as_deref().map(FC::reverse),
+        Some(pvp.into_iter().filter_map(|(p, r)| Some(PvpRanking {
+            pokemon: PC::reverse(&p.pokemon)?,
+            form: p.form.as_deref().and_then(FC::reverse),
             gender: p.gender,
             rank: Some(r.rank as u16),
             percentage: Some(r.percentage),
             cp: r.ivs.iter().map(|iv| iv.cp).next(),
             level: r.ivs.iter().map(|iv| iv.level as f32).next()
-        }).collect())
+        })).collect())
     }
 }
 
@@ -733,8 +733,8 @@ where
 
 pub trait Cache: std::fmt::Debug {
     type Id;
-    fn get(id: Self::Id) -> Option<&'static str>;
-    fn reverse(name: &str) -> Self::Id;
+    fn get(id: Self::Id) -> Option<String>;
+    fn reverse(name: &str) -> Option<Self::Id>;
 }
 
 #[cfg(test)]
@@ -744,17 +744,17 @@ mod tests {
 
     impl crate::gamemaster::Cache for FakeCache16 {
         type Id = u16;
-        fn get(id: Self::Id) -> Option<&'static str> {
+        fn get(id: Self::Id) -> Option<String> {
             match id {
-                255 => Some("torchic"),
+                255 => Some(String::from("torchic")),
                 _ => None,
             }
         }
-        fn reverse(name: &str) -> Self::Id {
+        fn reverse(name: &str) -> Option<Self::Id> {
             match name {
-                "torchic" => 255,
-                "combusken" => 256,
-                _ => 0,
+                "torchic" => Some(255),
+                "combusken" => Some(256),
+                _ => None,
             }
         }
     }
@@ -764,11 +764,11 @@ mod tests {
 
     impl crate::gamemaster::Cache for FakeCache64 {
         type Id = usize;
-        fn get(_: Self::Id) -> Option<&'static str> {
+        fn get(_: Self::Id) -> Option<String> {
             None
         }
-        fn reverse(_: &str) -> Self::Id {
-            0
+        fn reverse(_: &str) -> Option<Self::Id> {
+            None
         }
     }
 
