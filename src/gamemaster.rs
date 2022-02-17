@@ -389,8 +389,8 @@ where
             form: p.form.as_deref().and_then(FC::reverse),
             gender: p.gender,
             rank: Some(r.rank as u16),
-            competition_rank: Some(r.rank as u16),
-            ordinal_rank: Some(r.rank as u16),
+            competition_rank: None,
+            ordinal_rank: None,
             dense_rank: Some(r.rank as u16),
             percentage: Some(r.percentage),
             cp: r.ivs.iter().map(|iv| iv.cp).next(),
@@ -755,14 +755,14 @@ mod tests {
         type Id = u16;
         fn get(id: Self::Id) -> Option<String> {
             match id {
-                255 => Some(String::from("torchic")),
+                84 => Some(String::from("doduo")),
                 _ => None,
             }
         }
         fn reverse(name: &str) -> Option<Self::Id> {
             match name {
-                "torchic" => Some(255),
-                "combusken" => Some(256),
+                "doduo" => Some(84),
+                "dodrio" => Some(85),
                 _ => None,
             }
         }
@@ -773,7 +773,7 @@ mod tests {
         tracing_subscriber::fmt::try_init().ok();
         super::load_master_file().await.unwrap();
 
-        let p: crate::Pokemon = serde_json::from_str(r#"{"individual_attack":6,"weight":1.804092288017273,"costume":0,"latitude":45.59854125668628,"weather":1,"pokestop_id":"d558c850604f41d5997a5adb37b366c0.16","display_pokemon_id":null,"encounter_id":"7657693126371544079","disappear_time":1599018063,"cp":890,"last_modified_time":1599017290,"pokemon_id":255,"capture_1":0.14569318294525146,"move_2":63,"capture_2":0.2103751301765442,"gender":1,"username":"Sot20aB0rn","spawnpoint_id":"68C62B17","form":0,"pokemon_level":33,"individual_stamina":9,"pvp_rankings_great_league":[{"rank":809,"percentage":0.8700643398554556,"level":40.0,"form":0,"cp":989,"pokemon":255},{"rank":351,"percentage":0.9607850542156611,"level":38.5,"pokemon":256,"form":0,"cp":1490},{"pokemon":257,"form":0,"percentage":null,"cp":null,"level":null,"rank":null}],"capture_3":0.27015984058380127,"shiny":false,"longitude":8.866217271528695,"is_event":false,"move_1":209,"first_seen":1599017274,"individual_defense":12,"disappear_time_verified":true,"pvp_rankings_ultra_league":[{"cp":989,"level":40.0,"pokemon":255,"form":0,"rank":809,"percentage":0.8700643398554556},{"form":0,"percentage":0.8929189209843369,"cp":1523,"level":40.0,"pokemon":256,"rank":684},{"pokemon":257,"percentage":0.9690298527207762,"form":0,"level":35.0,"cp":2489,"rank":558}],"height":0.2996796667575836}"#).unwrap();
+        let p: crate::Pokemon = serde_json::from_str(r#"{"capture_1":0.5001416206359863,"capture_2":0.6465967893600464,"capture_3":0.7501416206359863,"costume":0,"cp":429,"disappear_time":1645104666,"disappear_time_verified":true,"display_pokemon_id":null,"encounter_id":"12588128500232151688","first_seen":1645103256,"form":0,"gender":2,"height":1.4087934494018557,"individual_attack":11,"individual_defense":4,"individual_stamina":8,"is_event":false,"last_modified_time":1645104600,"latitude":44.91511735359021,"longitude":8.60476096838095,"move_1":211,"move_2":38,"pokemon_id":84,"pokemon_level":14,"pokestop_id":"566540ec592b49c6b9bbb7c9ee19ccf5.16","pvp_rankings_great_league":[{"competition_rank":2410,"cp":1214,"dense_rank":1648,"form":0,"gender":2,"level":50.0,"ordinal_rank":2411,"percentage":0.8176732419241279,"pokemon":84,"rank":1648},{"competition_rank":3861,"cp":1471,"dense_rank":2571,"form":0,"gender":2,"level":23.5,"ordinal_rank":3862,"percentage":0.9217610617053382,"pokemon":85,"rank":2571}],"pvp_rankings_ultra_league":[{"competition_rank":2410,"cp":1214,"dense_rank":1648,"form":0,"gender":2,"level":50.0,"ordinal_rank":2411,"percentage":0.8176732419241279,"pokemon":84,"rank":1648},{"competition_rank":2302,"cp":2477,"dense_rank":1941,"form":0,"gender":2,"level":50.0,"ordinal_rank":2303,"percentage":0.934674433259593,"pokemon":85,"rank":1941}],"shiny":false,"spawnpoint_id":"77436A31","username":"1FkDv5FzcSEh6P5","weather":3,"weight":38.7144889831543}"#).unwrap();
         assert_eq!(p.pvp_rankings_great_league, super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Great));
         assert_eq!(p.pvp_rankings_ultra_league, super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Ultra));
     }
