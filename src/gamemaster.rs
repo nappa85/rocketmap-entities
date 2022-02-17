@@ -389,6 +389,9 @@ where
             form: p.form.as_deref().and_then(FC::reverse),
             gender: p.gender,
             rank: Some(r.rank as u16),
+            competition_rank: Some(r.rank as u16),
+            ordinal_rank: Some(r.rank as u16),
+            dense_rank: Some(r.rank as u16),
             percentage: Some(r.percentage),
             cp: r.ivs.iter().map(|iv| iv.cp).next(),
             level: r.ivs.iter().map(|iv| iv.level as f32).next()

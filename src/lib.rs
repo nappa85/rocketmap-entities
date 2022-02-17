@@ -301,6 +301,9 @@ impl Serialize for Gender {
 #[serde(deny_unknown_fields)]
 pub struct PvpRanking {
     pub rank: Option<u16>,
+    pub competition_rank: Option<u16>,
+    pub dense_rank: Option<u16>,
+    pub ordinal_rank: Option<u16>,
     pub percentage: Option<f64>,
     pub cp: Option<u16>,
     pub form: Option<u16>,
@@ -370,7 +373,8 @@ pub struct Gym {
     #[serde(deserialize_with = "bool_or_int")]
     #[serde(default)]
     pub ex_raid_eligible: Option<bool>,
-    pub sponsor_od: Option<u8>,
+    #[serde(alias = "sponsor_od")]
+    pub sponsor_id: Option<u8>,
     #[serde(alias = "is_ar_scan_eligible")]
     #[serde(deserialize_with = "bool_or_int")]
     #[serde(default)]
@@ -451,7 +455,8 @@ pub struct GymDetails {
     #[serde(deserialize_with = "bool_or_int")]
     #[serde(default)]
     pub ex_raid_eligible: Option<bool>,
-    pub sponsor_od: Option<u8>,
+    #[serde(alias = "sponsor_od")]
+    pub sponsor_id: Option<u8>,
     #[serde(alias = "is_ar_scan_eligible")]
     #[serde(deserialize_with = "bool_or_int")]
     #[serde(default)]
@@ -512,13 +517,18 @@ pub struct Raid {
     pub form: Option<u16>,
     pub is_exclusive: bool,
     pub gender: Option<Gender>,
-    pub sponsor_od: Option<u8>,
+    #[serde(alias = "sponsor_od")]
+    pub sponsor_id: Option<u8>,
     pub evolution: Option<u8>,
     #[serde(alias = "is_ar_scan_eligible")]
     #[serde(deserialize_with = "bool_or_int")]
     #[serde(default)]
     pub ar_scan_eligible: Option<bool>,
     pub costume: Option<u16>,
+    pub partner_id: Option<u8>,
+    pub power_up_end_timestamp: Option<u64>,
+    pub power_up_level: Option<u8>,
+    pub power_up_points: Option<u8>,
 }
 
 impl RequestId for Raid {}
@@ -823,6 +833,8 @@ mod tests {
             r#"[{"message":{"incident_expiration":1627761600,"incident_grunt_type":44,"incident_start":1627704000,"last_modified":1627692849,"latitude":44.709675,"longitude":11.230183,"name":null,"pokestop_id":"e60faaefb677454abb4f457728c08012.16","updated":1627739297},"type":"pokestop"},{"message":{"costume":0,"disappear_time":1627740736,"encounter_id":"10004286272000629245","form":1796,"gender":2,"latitude":44.706172627811654,"longitude":11.23583758468759,"pokemon_id":451,"rarity":1,"seen_type":"wild","spawnpoint_id":4913382076019,"verified":true},"type":"pokemon"},{"message":{"base_catch":0.41104692,"costume":0,"cp":1144,"cp_multiplier":0.654436,"disappear_time":1627741932,"encounter_id":"16657126456942039992","gender":2,"great_catch":0.54801804,"height":0.907565,"individual_attack":10,"individual_defense":7,"individual_stamina":9,"latitude":44.707990230574886,"longitude":11.231552667484236,"move_1":234,"move_2":62,"pokemon_id":408,"pokemon_level":24.0,"rarity":1,"seen_type":"encounter","spawnpoint_id":4913383551825,"ultra_catch":0.6531342,"verified":true,"weight":39.9263},"type":"pokemon"},{"message":{"gym_id":"b2690688c06d4d2a86a82d07c08399bc.16","is_ar_scan_eligible":1,"is_ex_raid_eligible":1,"latitude":44.709019,"longitude":11.226638,"name":"unknown","slots_available":5,"team_id":1,"url":"http://lh3.googleusercontent.com/HlTU20fVVHNpCrCkpOdholmckDkA3f72UsK91p6Oer19Kg2zAhBW0FCRznnfIoChVKNQdzPrXabjutFH8qZ9BjNJnHI"},"type":"gym"},{"message":{"costume":0,"cp":18678,"end":1627745082,"evolution":0,"form":1110,"gender":1,"gym_id":"b2690688c06d4d2a86a82d07c08399bc.16","is_ex_raid_eligible":true,"is_exclusive":false,"latitude":44.709019,"level":3,"longitude":11.226638,"move_1":239,"move_2":62,"name":"unknown","pokemon_id":142,"spawn":1627738782,"start":1627742382,"team_id":1,"url":"http://lh3.googleusercontent.com/HlTU20fVVHNpCrCkpOdholmckDkA3f72UsK91p6Oer19Kg2zAhBW0FCRznnfIoChVKNQdzPrXabjutFH8qZ9BjNJnHI"},"type":"raid"},{"message":{"alert_severity":0,"condition":1,"coords":[[44.66882104715408,11.24726479658924],[44.74098726355897,11.27600629086783],[44.750064773465105,11.184566849468368],[44.677852690537534,11.156046454887615]],"day":1,"latitude":44.70942870004289,"longitude":11.215946098529765,"s2_cell_id":"5152055301549064192","time_changed":1627743832},"type":"weather"},{"message":{"cp":0,"end":1627751404,"evolution":0,"gym_id":"aa89fed0701a453ebb7efd4b53b23858.11","is_ex_raid_eligible":false,"is_exclusive":false,"latitude":44.712047,"level":5,"longitude":11.232754,"move_1":1,"move_2":2,"name":"unknown","pokemon_id":0,"spawn":1627745104,"start":1627748704,"team_id":2,"url":"http://lh3.googleusercontent.com/PotVgHuH7c_z8SpuIHFFBxzFOD78DWPubGpSHKhmTBUyE0bcZPfXHa1FXGkB00IViJ_R8n0lR6p5GpUFjvg57XPfNDg"},"type":"raid"},{"message":{"conditions":[],"latitude":44.709258,"longitude":11.225237,"pokestop_id":"3c13a37d09954a71ad20d0210a559808.16","pokestop_name":"La Favola della Bambina che Andava a Scuola 4/5","pokestop_url":"http://lh3.googleusercontent.com/29AIHT2C8MG0SNUiTHD2XaHJeF-0i3UPRkKym_2jparz2ypcd7hy7TxcZZYqGBLDP0ifqFfIl2Jmsgq0almeMOXYb10","quest_task":"Earn 3 Candies walking with your buddy","rewards":[{"info":{"costume_id":0,"form_id":292,"pokemon_id":280,"shiny":0},"type":7}],"target":3,"template":"AUG_2021_EARN_BUDDY_CANDY","type":17,"updated":1628019005},"type":"quest"}]"#,
             r#"[{"message":{"base_catch":0.6607098,"costume":0,"cp":259,"cp_multiplier":0.399567,"disappear_time":1637057553,"display_form":791,"display_gender":2,"display_pokemon_id":434,"encounter_id":"12464534217192589745","gender":3,"great_catch":0.8023681,"height":0.447002,"individual_attack":7,"individual_defense":3,"individual_stamina":14,"latitude":44.07412723254084,"longitude":12.576733966755077,"move_1":242,"move_2":133,"pokemon_id":132,"pokemon_level":9.0,"rarity":4,"seen_type":"encounter","spawnpoint_id":1317686184289,"ultra_catch":0.88488215,"verified":true,"weather":4,"weight":22.0181},"type":"pokemon"}]"#,
             r#"[{"message":{"gym_id":"b2690688c06d4d2a86a82d07c08399bc.16","is_ar_scan_eligible":1,"is_ex_raid_eligible":1,"is_in_battle":0,"latitude":44.709019,"longitude":11.226638,"name":"unknown","slots_available":5,"team_id":2,"url":"http://lh3.googleusercontent.com/HlTU20fVVHNpCrCkpOdholmckDkA3f72UsK91p6Oer19Kg2zAhBW0FCRznnfIoChVKNQdzPrXabjutFH8qZ9BjNJnHI"},"type":"gym"}]"#,
+            r#"[{"message":{"ar_scan_eligible":false,"cp":0,"end":1645110892,"evolution":0,"ex_raid_eligible":true,"form":0,"gender":0,"gym_id":"fde9ba33b4b5471f91ebec51cf092ac6.16","gym_name":"Giardino Falcone E Borsellino","gym_url":"http://lh3.googleusercontent.com/6ow9LWH9X263OlnD0NDvRoKPFv1ggcNA5Mi7R2QR7xSiZgM0rPHhdQ_zplDI9tDuzaao5z3nuI4WQsbTCbVf9NrxChY","is_exclusive":false,"latitude":45.03994,"level":1,"longitude":9.691516,"move_1":0,"move_2":0,"partner_id":0,"pokemon_id":0,"power_up_end_timestamp":0,"power_up_level":0,"power_up_points":10,"spawn":1645104592,"sponsor_id":0,"start":1645108192,"team_id":3},"type":"raid"},{"message":{"capture_1":0.5001416206359863,"capture_2":0.6465967893600464,"capture_3":0.7501416206359863,"costume":0,"cp":429,"disappear_time":1645104666,"disappear_time_verified":true,"display_pokemon_id":null,"encounter_id":"12588128500232151688","first_seen":1645103256,"form":0,"gender":2,"height":1.4087934494018557,"individual_attack":11,"individual_defense":4,"individual_stamina":8,"is_event":false,"last_modified_time":1645104600,"latitude":44.91511735359021,"longitude":8.60476096838095,"move_1":211,"move_2":38,"pokemon_id":84,"pokemon_level":14,"pokestop_id":"566540ec592b49c6b9bbb7c9ee19ccf5.16","pvp_rankings_great_league":[{"competition_rank":2410,"cp":1214,"dense_rank":1648,"form":0,"gender":2,"level":50.0,"ordinal_rank":2411,"percentage":0.8176732419241279,"pokemon":84,"rank":1648},{"competition_rank":3861,"cp":1471,"dense_rank":2571,"form":0,"gender":2,"level":23.5,"ordinal_rank":3862,"percentage":0.9217610617053382,"pokemon":85,"rank":2571}],"pvp_rankings_ultra_league":[{"competition_rank":2410,"cp":1214,"dense_rank":1648,"form":0,"gender":2,"level":50.0,"ordinal_rank":2411,"percentage":0.8176732419241279,"pokemon":84,"rank":1648},{"competition_rank":2302,"cp":2477,"dense_rank":1941,"form":0,"gender":2,"level":50.0,"ordinal_rank":2303,"percentage":0.934674433259593,"pokemon":85,"rank":1941}],"shiny":false,"spawnpoint_id":"77436A31","username":"1FkDv5FzcSEh6P5","weather":3,"weight":38.7144889831543},"type":"pokemon"}]"#,
+
         ];
         let mut weathers = Vec::new();
         for s in &strings {
