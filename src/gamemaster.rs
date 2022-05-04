@@ -388,6 +388,7 @@ where
             pokemon: PC::reverse(&p.pokemon)?,
             form: p.form.as_deref().and_then(FC::reverse),
             gender: p.gender,
+            cap: None,
             rank: Some(r.rank as u16),
             competition_rank: None,
             ordinal_rank: None,
@@ -728,6 +729,14 @@ where
 {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let mut pokemon = crate::Pokemon::deserialize(deserializer)?;
+        if let Some(ref mut pvp) = pokemon.pvp {
+            if pokemon.pvp_rankings_great_league.is_none() {
+                pokemon.pvp_rankings_great_league = pvp.remove("great");
+            }
+            if pokemon.pvp_rankings_ultra_league.is_none() {
+                pokemon.pvp_rankings_ultra_league = pvp.remove("ultra");
+            }
+        }
         if pokemon.pvp_rankings_great_league.is_none() && pokemon.pvp_rankings_ultra_league.is_none() {
             pokemon.pvp_rankings_great_league = pvp_ranking::<PC, FC>(&pokemon, League::Great);
             pokemon.pvp_rankings_ultra_league = pvp_ranking::<PC, FC>(&pokemon, League::Ultra);
