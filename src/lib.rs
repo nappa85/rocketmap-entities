@@ -201,6 +201,7 @@ pub struct Pokemon {
     pub capture_1: Option<f64>,
     pub capture_2: Option<f64>,
     pub capture_3: Option<f64>,
+    pub pvp: Option<Vec<PvpRanking>>,
     pub pvp_rankings_great_league: Option<Vec<PvpRanking>>,
     pub pvp_rankings_ultra_league: Option<Vec<PvpRanking>>,
     pub is_event: Option<bool>,
@@ -315,16 +316,19 @@ pub struct PvpRanking {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Pokestop {
+    pub id: Option<String>,
     pub pokestop_id: String,
+    #[serde(alias = "pokestop_name")]
     pub name: Option<String>,
     pub url: Option<String>,
     pub latitude: f64,
     pub longitude: f64,
     pub enabled: Option<bool>,
-    pub last_modified: i64,
+    pub last_modified: Option<i64>,
     pub active_fort_modifier: Option<bool>,
     pub lure_expiration: Option<i64>,
     pub pokestop_display: Option<u8>,
+    #[serde(alias = "start")]
     pub incident_start: Option<i64>,
     #[serde(alias = "incident_expiration")]
     pub incident_expire_timestamp: Option<i64>,
@@ -339,6 +343,10 @@ pub struct Pokestop {
     pub power_up_end_timestamp: Option<u64>,
     pub power_up_level: Option<u8>,
     pub power_up_points: Option<u8>,
+    pub character: Option<u16>,
+    pub expiration: Option<i64>,
+    pub display_type: Option<u8>,
+    pub style: Option<u8>,
 }
 
 impl RequestId for Pokestop {
@@ -848,7 +856,7 @@ mod tests {
             r#"[{"message":{"base_catch":0.6607098,"costume":0,"cp":259,"cp_multiplier":0.399567,"disappear_time":1637057553,"display_form":791,"display_gender":2,"display_pokemon_id":434,"encounter_id":"12464534217192589745","gender":3,"great_catch":0.8023681,"height":0.447002,"individual_attack":7,"individual_defense":3,"individual_stamina":14,"latitude":44.07412723254084,"longitude":12.576733966755077,"move_1":242,"move_2":133,"pokemon_id":132,"pokemon_level":9.0,"rarity":4,"seen_type":"encounter","spawnpoint_id":1317686184289,"ultra_catch":0.88488215,"verified":true,"weather":4,"weight":22.0181},"type":"pokemon"}]"#,
             r#"[{"message":{"gym_id":"b2690688c06d4d2a86a82d07c08399bc.16","is_ar_scan_eligible":1,"is_ex_raid_eligible":1,"is_in_battle":0,"latitude":44.709019,"longitude":11.226638,"name":"unknown","slots_available":5,"team_id":2,"url":"http://lh3.googleusercontent.com/HlTU20fVVHNpCrCkpOdholmckDkA3f72UsK91p6Oer19Kg2zAhBW0FCRznnfIoChVKNQdzPrXabjutFH8qZ9BjNJnHI"},"type":"gym"}]"#,
             r#"[{"message":{"ar_scan_eligible":false,"cp":0,"end":1645110892,"evolution":0,"ex_raid_eligible":true,"form":0,"gender":0,"gym_id":"fde9ba33b4b5471f91ebec51cf092ac6.16","gym_name":"Giardino Falcone E Borsellino","gym_url":"http://lh3.googleusercontent.com/6ow9LWH9X263OlnD0NDvRoKPFv1ggcNA5Mi7R2QR7xSiZgM0rPHhdQ_zplDI9tDuzaao5z3nuI4WQsbTCbVf9NrxChY","is_exclusive":false,"latitude":45.03994,"level":1,"longitude":9.691516,"move_1":0,"move_2":0,"partner_id":0,"pokemon_id":0,"power_up_end_timestamp":0,"power_up_level":0,"power_up_points":10,"spawn":1645104592,"sponsor_id":0,"start":1645108192,"team_id":3},"type":"raid"},{"message":{"capture_1":0.5001416206359863,"capture_2":0.6465967893600464,"capture_3":0.7501416206359863,"costume":0,"cp":429,"disappear_time":1645104666,"disappear_time_verified":true,"display_pokemon_id":null,"encounter_id":"12588128500232151688","first_seen":1645103256,"form":0,"gender":2,"height":1.4087934494018557,"individual_attack":11,"individual_defense":4,"individual_stamina":8,"is_event":false,"last_modified_time":1645104600,"latitude":44.91511735359021,"longitude":8.60476096838095,"move_1":211,"move_2":38,"pokemon_id":84,"pokemon_level":14,"pokestop_id":"566540ec592b49c6b9bbb7c9ee19ccf5.16","pvp_rankings_great_league":[{"competition_rank":2410,"cp":1214,"dense_rank":1648,"form":0,"gender":2,"level":50.0,"ordinal_rank":2411,"percentage":0.8176732419241279,"pokemon":84,"rank":1648},{"competition_rank":3861,"cp":1471,"dense_rank":2571,"form":0,"gender":2,"level":23.5,"ordinal_rank":3862,"percentage":0.9217610617053382,"pokemon":85,"rank":2571}],"pvp_rankings_ultra_league":[{"competition_rank":2410,"cp":1214,"dense_rank":1648,"form":0,"gender":2,"level":50.0,"ordinal_rank":2411,"percentage":0.8176732419241279,"pokemon":84,"rank":1648},{"competition_rank":2302,"cp":2477,"dense_rank":1941,"form":0,"gender":2,"level":50.0,"ordinal_rank":2303,"percentage":0.934674433259593,"pokemon":85,"rank":1941}],"shiny":false,"spawnpoint_id":"77436A31","username":"1FkDv5FzcSEh6P5","weather":3,"weight":38.7144889831543},"type":"pokemon"},{"message":{"ar_scan_eligible":true,"ex_raid_eligible":false,"guard_pokemon_id":2,"id":"cc7c42d4e6944ef4abd72a82df1760a3.16","in_battle":true,"latitude":45.484564,"longitude":9.215608,"name":"Palazzo delle Lumachine - Piazza Argentina","partner_id":0,"power_up_end_timestamp":0,"power_up_level":0,"power_up_points":10,"slots_available":0,"sponsor_id":0,"team":2,"url":"http://lh3.googleusercontent.com/NuK7NYSvB0YMhUJOsIoNqsbfQFPDPGn3WnyYCdYZ5_uGP0tIkdz7XNJvZGi4PoefVLo9KnXzE2E1-3Ral6sJzQi-6w"},"type":"gym_details"},{"message":{"ar_scan_eligible":false,"enabled":true,"incident_expire_timestamp":1645108201,"last_modified":1645107445,"latitude":39.216643,"longitude":9.11309,"lure_expiration":1645109245,"lure_id":501,"name":"Sunny","pokestop_display":0,"pokestop_id":"e877d49df75d48978fc13d5db6a4266f.16","power_up_end_timestamp":0,"power_up_level":0,"power_up_points":0,"updated":1645107527,"url":"http://lh3.googleusercontent.com/GP1w-atpRcuitA2IZ3knKpslyL4tQEtSXC-FAZawj8SCTcbLnHaZpAbhGjWuqVrstLnaYjZQZtEI01qB9CXAgn_Mz5E"},"type":"pokestop"},{"message":{"ar_scan_eligible":false,"conditions":[{"type":3}],"latitude":39.244372,"longitude":9.129608,"pokestop_id":"3345943e0b5b4be4b979f7de0a7e670e.16","pokestop_name":"Chiesa Di San Pietro Apostolo","pokestop_url":"http://lh3.googleusercontent.com/cpY7q5uXCOs2gX10N0xcA-TaS9OCciy80ssJuo6ZUVA7A9UTpKdrPWXbL-4c9g-PlBI36COpdsgl8_7kP4nj5NYzVE62","rewards":[{"info":{"costume_id":0,"form_id":55,"gender_id":0,"pokemon_id":37,"shiny":false},"type":7}],"target":5,"template":"challenge_catch_weather_easy_pkmn","title":"quest_catch_weather_boost_plural","type":4,"updated":1645153994,"with_ar":true},"type":"quest"},{"message":{"ar_scan_eligible":false,"enabled":true,"ex_raid_eligible":false,"guard_pokemon_id":0,"gym_id":"bc2730fe16dc4777ab73a109396b1bf0.16","gym_name":"Unknown","last_modified":1645123583,"latitude":44.418859,"longitude":8.908947,"partner_id":0,"power_up_end_timestamp":0,"power_up_level":0,"power_up_points":0,"raid_active_until":0,"slots_available":0,"sponsor_id":0,"team_id":0,"url":""},"type":"gym"}]"#,
-
+            r#"[{"message":{"character":44,"display_type":3,"enabled":true,"expiration":1651694400,"grunt_type":44,"id":"6885108217928419841","incident_expire_timestamp":1651694400,"latitude":45.463485,"longitude":9.2027,"pokestop_id":"f2de88dcf5303bfc91868af36d910904.16","pokestop_name":"Fontana Circolare Senz'Acqua Viva","start":1651636800,"style":1,"updated":1651657535,"url":"http://lh3.googleusercontent.com/gqWpWoV3mzBOVDbYOO1VI08feOIJP1-E4r1xqe7Q6ytpiNfnVs1urSIGvl_IAnQia5-xDMr8Yrb5mfo8nOJBqNkm1OkX6Z23b1EPTJXz"},"type":"invasion"},{"message":{"capture_1":0.0,"capture_2":0.0,"capture_3":0.0,"costume":0,"cp":null,"disappear_time":1651662160,"disappear_time_verified":false,"display_pokemon_id":null,"encounter_id":"6604085864133522739","first_seen":1651660960,"form":304,"gender":1,"height":null,"individual_attack":null,"individual_defense":null,"individual_stamina":null,"is_event":false,"last_modified_time":1651660960,"latitude":44.41808,"longitude":8.89338,"move_1":null,"move_2":null,"pokemon_id":63,"pokemon_level":null,"pokestop_id":"4e421a889c554f738fcb1f41126f3ae4.16","pvp":null,"shiny":null,"spawnpoint_id":"None","username":"2T5ycLNc","weather":0,"weight":null},"type":"pokemon"}]"#,
         ];
         let mut weathers = Vec::new();
         for s in &strings {
