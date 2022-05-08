@@ -764,26 +764,36 @@ mod tests {
         type Id = u16;
         fn get(id: Self::Id) -> Option<String> {
             match id {
-                84 => Some(String::from("doduo")),
+                299 => Some(String::from("nosepass")),
                 _ => None,
             }
         }
         fn reverse(name: &str) -> Option<Self::Id> {
             match name {
-                "doduo" => Some(84),
-                "dodrio" => Some(85),
+                "nosepass" => Some(299),
+                "probopass" => Some(476),
                 _ => None,
             }
         }
     }
 
     #[tokio::test]
-    async fn it_works() {
+    async fn rdm() {
         tracing_subscriber::fmt::try_init().ok();
         super::load_master_file().await.unwrap();
 
-        let p: crate::Pokemon = serde_json::from_str(r#"{"capture_1":0.5001416206359863,"capture_2":0.6465967893600464,"capture_3":0.7501416206359863,"costume":0,"cp":429,"disappear_time":1645104666,"disappear_time_verified":true,"display_pokemon_id":null,"encounter_id":"12588128500232151688","first_seen":1645103256,"form":0,"gender":2,"height":1.4087934494018557,"individual_attack":11,"individual_defense":4,"individual_stamina":8,"is_event":false,"last_modified_time":1645104600,"latitude":44.91511735359021,"longitude":8.60476096838095,"move_1":211,"move_2":38,"pokemon_id":84,"pokemon_level":14,"pokestop_id":"566540ec592b49c6b9bbb7c9ee19ccf5.16","pvp_rankings_great_league":[{"competition_rank":2410,"cp":1214,"dense_rank":1648,"form":0,"gender":2,"level":50.0,"ordinal_rank":2411,"percentage":0.8176732419241279,"pokemon":84,"rank":1648},{"competition_rank":3861,"cp":1471,"dense_rank":2571,"form":0,"gender":2,"level":23.5,"ordinal_rank":3862,"percentage":0.9217610617053382,"pokemon":85,"rank":2571}],"pvp_rankings_ultra_league":[{"competition_rank":2410,"cp":1214,"dense_rank":1648,"form":0,"gender":2,"level":50.0,"ordinal_rank":2411,"percentage":0.8176732419241279,"pokemon":84,"rank":1648},{"competition_rank":2302,"cp":2477,"dense_rank":1941,"form":0,"gender":2,"level":50.0,"ordinal_rank":2303,"percentage":0.934674433259593,"pokemon":85,"rank":1941}],"shiny":false,"spawnpoint_id":"77436A31","username":"1FkDv5FzcSEh6P5","weather":3,"weight":38.7144889831543}"#).unwrap();
-        assert_eq!(p.pvp_rankings_great_league, super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Great));
-        assert_eq!(p.pvp_rankings_ultra_league, super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Ultra));
+        let p: crate::Pokemon = serde_json::from_str(r#"{"capture_1":0.20381081104278564,"capture_2":0.28956490755081177,"capture_3":0.3660827875137329,"costume":0,"cp":418,"disappear_time":1651662043,"disappear_time_verified":true,"display_pokemon_id":null,"encounter_id":"15233804735450564751","first_seen":1651660542,"form":1460,"gender":1,"height":1.083377718925476,"individual_attack":9,"individual_defense":11,"individual_stamina":13,"is_event":false,"last_modified_time":1651661674,"latitude":39.20259574378766,"longitude":9.151106923007156,"move_1":206,"move_2":79,"pokemon_id":299,"pokemon_level":16,"pokestop_id":"c39f894d33ea450691cd26aac62e6d73.16","pvp":{"great":[{"cap":50,"competition_rank":1255,"cp":1492,"dense_rank":935,"form":1841,"gender":1,"level":26.5,"ordinal_rank":1255,"percentage":0.954104350930194,"pokemon":476,"rank":935}],"little":[{"cap":50,"competition_rank":1669,"cp":497,"dense_rank":1135,"form":1460,"gender":1,"level":19.0,"ordinal_rank":1669,"percentage":0.9211329569086472,"pokemon":299,"rank":1135}],"ultra":[{"cap":50,"competition_rank":435,"cp":2228,"dense_rank":303,"form":1841,"gender":1,"level":50.0,"ordinal_rank":435,"percentage":0.9400913195945072,"pokemon":476,"rank":303}]},"shiny":false,"spawnpoint_id":"7337961D","username":"AddZ3stOp7","weather":3,"weight":125.26021575927734}"#).unwrap();
+        assert_eq!(p.pvp.as_ref().and_then(|hm| hm.get("great")), super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Great).as_ref());
+        assert_eq!(p.pvp.as_ref().and_then(|hm| hm.get("ultra")), super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Ultra).as_ref());
+    }
+
+    #[tokio::test]
+    async fn mad() {
+        tracing_subscriber::fmt::try_init().ok();
+        super::load_master_file().await.unwrap();
+
+        let p: super::PokemonWithPvpInfo<FakeCache, FakeCache> = serde_json::from_str(r#"{"base_catch":0.19227618,"costume":0,"cp":451,"cp_multiplier":0.566755,"disappear_time":1652027084,"display_pokemon_id":null,"encounter_id":"17682956283159920671","form":1460,"gender":1,"great_catch":0.27407068,"height":0.872657,"individual_attack":4,"individual_defense":15,"individual_stamina":14,"latitude":45.46209919274713,"longitude":9.19350395781358,"move_1":227,"move_2":79,"pokemon_id":299,"pokemon_level":18.0,"rarity":5,"seen_type":"encounter","spawnpoint_id":4915261508459,"ultra_catch":0.34758216,"verified":true,"weather":3,"weight":52.9454}"#).unwrap();
+        assert!(p.pvp_rankings_great_league.is_some());
+        assert!(p.pvp_rankings_ultra_league.is_some());
     }
 }
