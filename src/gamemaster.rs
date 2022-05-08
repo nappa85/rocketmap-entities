@@ -12,7 +12,7 @@ use tokio::time::interval;
 
 use pogo_gamemaster_entities::{TemplateWrapper, EvolutionBranch, PokemonSettings};
 
-use tracing::{error, debug};
+use tracing::{error, debug, warn};
 
 use crate::{PvpRanking, Gender};
 
@@ -272,21 +272,23 @@ struct PvpIV {
 async fn load_master_file() -> Result<(), ()> {
     let start = SystemTime::now();
 
-    let etag = ETAG.load();
     let res = reqwest::get("https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json")
         .await
         .map_err(|e| error!("GameMaster retrieve error: {}", e))?;
 
-    let etag = if let Some(header) = res.headers().get("eTag") {
-        if etag.as_ref() == header.as_ref() {
-            debug!("Skipping update because etag equals to last");
-            return Ok(());
-        }
+    let etag = {
+        let etag = ETAG.load();
+        if let Some(header) = res.headers().get("eTag") {
+            if etag.as_ref() == header.as_ref() {
+                warn!("Skipping update because etag equals to last: {} == {}", String::from_utf8_lossy(etag.as_ref()), String::from_utf8_lossy(header.as_ref()));
+                return Ok(());
+            }
 
-        Some(header.as_ref().to_owned())
-    }
-    else {
-        None
+            Some(header.as_ref().to_owned())
+        }
+        else {
+            None
+        }
     };
 
     let root = res.json::<Vec<TemplateWrapper>>()
