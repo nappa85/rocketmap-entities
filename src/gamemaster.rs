@@ -370,6 +370,7 @@ where
     PC: Cache<Id=u16>,
     FC: Cache<Id=u16>,
 {
+    debug!("attack: {:?} defense: {:?} stamina: {:?} level: {:?}", pokemon.individual_attack, pokemon.individual_defense, pokemon.individual_stamina, pokemon.pokemon_level);
     let iv = IV {
         attack: pokemon.individual_attack?,
         defense: pokemon.individual_defense?,
@@ -377,12 +378,19 @@ where
     };
     let level = pokemon.pokemon_level?.into();
 
-    let name = PC::get(pokemon.pokemon_id)?;
+    let name = match PC::get(pokemon.pokemon_id) {
+        Some(s) => s,
+        None => {
+            debug!("Pokemon {} not found", pokemon.pokemon_id);
+            return None;
+        },
+    };
     let form = pokemon.form.and_then(FC::get);
     let costume = pokemon.costume.and_then(FC::get);
 
     let pvp = PvpHelper::get_pvp_stats_with_evolutions(&name, form.as_deref(), pokemon.gender, costume.as_deref(), iv, level, league);
     if pvp.is_empty() {
+        debug!("No combinations found");
         None
     }
     else {
@@ -766,12 +774,16 @@ mod tests {
         type Id = u16;
         fn get(id: Self::Id) -> Option<String> {
             match id {
+                69 => Some(String::from("bellsprout")),
                 299 => Some(String::from("nosepass")),
                 _ => None,
             }
         }
         fn reverse(name: &str) -> Option<Self::Id> {
             match name {
+                "bellsprout" => Some(69),
+                "weepinbell" => Some(70),
+                "victreebel" => Some(71),
                 "nosepass" => Some(299),
                 "probopass" => Some(476),
                 _ => None,
@@ -795,6 +807,16 @@ mod tests {
         super::load_master_file().await.unwrap();
 
         let p: super::PokemonWithPvpInfo<FakeCache, FakeCache> = serde_json::from_str(r#"{"base_catch":0.19227618,"costume":0,"cp":451,"cp_multiplier":0.566755,"disappear_time":1652027084,"display_pokemon_id":null,"encounter_id":"17682956283159920671","form":1460,"gender":1,"great_catch":0.27407068,"height":0.872657,"individual_attack":4,"individual_defense":15,"individual_stamina":14,"latitude":45.46209919274713,"longitude":9.19350395781358,"move_1":227,"move_2":79,"pokemon_id":299,"pokemon_level":18.0,"rarity":5,"seen_type":"encounter","spawnpoint_id":4915261508459,"ultra_catch":0.34758216,"verified":true,"weather":3,"weight":52.9454}"#).unwrap();
+        assert!(p.pvp_rankings_great_league.is_some());
+        assert!(p.pvp_rankings_ultra_league.is_some());
+    }
+
+    #[tokio::test]
+    async fn mad2() {
+        tracing_subscriber::fmt::try_init().ok();
+        super::load_master_file().await.unwrap();
+
+        let p: super::PokemonWithPvpInfo<FakeCache, FakeCache> = serde_json::from_str(r#"{"base_catch":0.3334396,"costume":0,"cp":893,"cp_multiplier":0.749761,"disappear_time":1655239379,"display_pokemon_id":null,"encounter_id":"12121595143611067674","form":664,"gender":1,"great_catch":0.4557991,"height":0.645319,"individual_attack":14,"individual_defense":15,"individual_stamina":5,"latitude":45.564914,"longitude":12.433863,"move_1":214,"move_2":118,"pokemon_id":69,"pokemon_level":33.0,"rarity":2,"seen_type":"encounter","spawnpoint_id":4915476003669,"ultra_catch":0.5556972,"verified":true,"weather":1,"weight":4.01554}"#).unwrap();
         assert!(p.pvp_rankings_great_league.is_some());
         assert!(p.pvp_rankings_ultra_league.is_some());
     }
