@@ -269,7 +269,7 @@ struct PvpIV {
         Log.debug(message: "[PVPStatsManager] Done parsing game master file")
     }
 */
-async fn load_master_file() -> Result<(), ()> {
+pub async fn load_master_file() -> Result<(), ()> {
     let start = SystemTime::now();
 
     let res = reqwest::get("https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json")
