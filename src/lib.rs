@@ -370,6 +370,7 @@ pub struct Gym {
     pub gym_id: String,
     #[serde(alias = "name")]
     pub gym_name: String,
+    pub description: Option<String>,
     pub url: String,
     pub latitude: f64,
     pub longitude: f64,
