@@ -145,7 +145,7 @@ where
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Pokemon {
     #[serde(deserialize_with = "string_or_int")]
