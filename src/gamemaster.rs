@@ -394,19 +394,27 @@ where
         None
     }
     else {
-        Some(pvp.into_iter().filter_map(|(p, r)| Some(PvpRanking {
-            pokemon: PC::reverse(&p.pokemon)?,
-            form: p.form.as_deref().and_then(FC::reverse),
-            gender: p.gender,
-            cap: None,
-            rank: Some(r.rank as u16),
-            competition_rank: None,
-            ordinal_rank: None,
-            dense_rank: Some(r.rank as u16),
-            percentage: Some(r.percentage),
-            cp: r.ivs.iter().map(|iv| iv.cp).next(),
-            level: r.ivs.iter().map(|iv| iv.level as f32).next()
-        })).collect())
+        Some(pvp.into_iter().filter_map(|(p, r)| {
+            if let Some(pokemon) = PC::reverse(&p.pokemon) {
+                Some(PvpRanking {
+                    pokemon,
+                    form: p.form.as_deref().and_then(FC::reverse),
+                    gender: p.gender,
+                    cap: None,
+                    rank: Some(r.rank as u16),
+                    competition_rank: None,
+                    ordinal_rank: None,
+                    dense_rank: Some(r.rank as u16),
+                    percentage: Some(r.percentage),
+                    cp: r.ivs.iter().map(|iv| iv.cp).next(),
+                    level: r.ivs.iter().map(|iv| iv.level as f32).next(),
+                })
+            }
+            else {
+                debug!("Pokemon {} not found", p.pokemon);
+                None
+            }
+        }).collect())
     }
 }
 
