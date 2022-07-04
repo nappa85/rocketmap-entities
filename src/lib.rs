@@ -299,7 +299,7 @@ impl Serialize for Gender {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct PvpRanking {
     pub cap: Option<u8>,
