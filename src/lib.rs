@@ -4,20 +4,20 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use serde_json::value::Value;
 
-use chrono::{NaiveDate, Local};
+use chrono::{Local, NaiveDate};
 
-use geo::{LineString, Polygon, Point};
+use geo::{LineString, Point, Polygon};
 
 use tracing::warn;
 
 pub mod gamemaster;
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields, tag = "type", content = "message", bound = "")] 
+#[serde(deny_unknown_fields, tag = "type", content = "message", bound = "")]
 pub enum Request<PC, FC>
 where
-    PC: gamemaster::Cache<Id=u16>,
-    FC: gamemaster::Cache<Id=u16>,
+    PC: gamemaster::Cache<Id = u16>,
+    FC: gamemaster::Cache<Id = u16>,
 {
     #[serde(rename = "pokemon")]
     Pokemon(Box<gamemaster::PokemonWithPvpInfo<PC, FC>>),
@@ -42,9 +42,9 @@ where
     #[serde(rename = "account")]
     Account(Box<Account>),
     #[serde(rename = "reload")]
-    Reload(Vec<String>),//Vec should already be a pointer to heap
+    Reload(Vec<String>), //Vec should already be a pointer to heap
     #[serde(rename = "reload_city")]
-    ReloadCity(u16),//adding a Box is futile
+    ReloadCity(u16), //adding a Box is futile
     #[serde(rename = "watch")]
     StartWatch(Box<Watch>),
     #[serde(rename = "stop")]
@@ -61,8 +61,8 @@ pub trait RequestId: std::fmt::Debug {
 
 impl<PC, FC> RequestId for Request<PC, FC>
 where
-    PC: gamemaster::Cache<Id=u16>,
-    FC: gamemaster::Cache<Id=u16>,
+    PC: gamemaster::Cache<Id = u16>,
+    FC: gamemaster::Cache<Id = u16>,
 {
     fn get_id(&self) -> Option<String> {
         match self {
@@ -95,7 +95,7 @@ enum StringOrInt {
 
 fn string_or_int<'de, D>(data: D) -> Result<Option<String>, D::Error>
 where
-	D: Deserializer<'de>,
+    D: Deserializer<'de>,
 {
     match Option::<StringOrInt>::deserialize(data)? {
         Some(StringOrInt::String(s)) => Ok(Some(s)),
@@ -113,7 +113,7 @@ enum IntOrFloat {
 
 fn int_or_float<'de, D>(data: D) -> Result<Option<u8>, D::Error>
 where
-	D: Deserializer<'de>,
+    D: Deserializer<'de>,
 {
     match Option::<IntOrFloat>::deserialize(data)? {
         Some(IntOrFloat::Int(i)) => Ok(Some(i)),
@@ -122,7 +122,7 @@ where
                 warn!("pokemon_level {} detected", f);
             }
             Ok(Some(f.round() as u8))
-        },
+        }
         None => Ok(None),
     }
 }
@@ -136,7 +136,7 @@ enum BoolOrInt {
 
 fn bool_or_int<'de, D>(data: D) -> Result<Option<bool>, D::Error>
 where
-	D: Deserializer<'de>,
+    D: Deserializer<'de>,
 {
     match Option::<BoolOrInt>::deserialize(data)? {
         Some(BoolOrInt::Bool(b)) => Ok(Some(b)),
@@ -234,7 +234,7 @@ pub enum Gender {
     Unset,
     Male,
     Female,
-    Genderless, 
+    Genderless,
 }
 
 impl Gender {
@@ -258,11 +258,9 @@ impl Gender {
     pub fn from_str(s: &str) -> Self {
         if s.eq_ignore_ascii_case("male") {
             Gender::Male
-        }
-        else if s.eq_ignore_ascii_case("female") {
+        } else if s.eq_ignore_ascii_case("female") {
             Gender::Female
-        }
-        else {
+        } else {
             Gender::Unset
         }
     }
@@ -275,13 +273,15 @@ impl ToString for Gender {
             Gender::Male => "male",
             Gender::Female => "female",
             Gender::Genderless => "genderless",
-        }).to_owned()
+        })
+        .to_owned()
     }
 }
 
 impl<'de> Deserialize<'de> for Gender {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let value = u8::deserialize(deserializer)?;
 
@@ -361,11 +361,7 @@ impl RequestId for Pokestop {
     fn get_id(&self) -> Option<String> {
         Some(format!(
             "{}-{:?}-{:?}-{:?}-{:?}",
-            self.pokestop_id,
-            self.lure_expiration,
-            self.lure_id,
-            self.incident_expire_timestamp,
-            self.grunt_type,
+            self.pokestop_id, self.lure_expiration, self.lure_id, self.incident_expire_timestamp, self.grunt_type,
         ))
     }
 }
@@ -373,6 +369,7 @@ impl RequestId for Pokestop {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Gym {
+    #[serde(alias = "id")]
     pub gym_id: String,
     #[serde(alias = "name")]
     pub gym_name: String,
@@ -385,7 +382,7 @@ pub struct Gym {
     // pub occupied_since: i64,
     pub last_modified: Option<i64>,
     pub guard_pokemon_id: Option<u16>,
-    // pub total_cp: usize,
+    pub total_cp: Option<u32>,
     pub slots_available: u8,
     // pub lowest_pokemon_motivation: f64,
     pub raid_active_until: Option<i64>,
@@ -437,13 +434,15 @@ impl ToString for Team {
             Team::Mystic => "mystic",
             Team::Valor => "valor",
             Team::Instinct => "instinct",
-        }).to_owned()
+        })
+        .to_owned()
     }
 }
 
 impl<'de> Deserialize<'de> for Team {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let value = usize::deserialize(deserializer)?;
 
@@ -521,6 +520,7 @@ impl RequestId for GymDetails {}
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Raid {
+    #[serde(alias = "id")]
     pub gym_id: String,
     #[serde(alias = "name")]
     pub gym_name: String,
@@ -597,13 +597,15 @@ impl ToString for CaptchaStatus {
             CaptchaStatus::Success => "success",
             CaptchaStatus::Failure => "failure",
             CaptchaStatus::Error => "error",
-        }).to_owned()
+        })
+        .to_owned()
     }
 }
 
 impl<'de> Deserialize<'de> for CaptchaStatus {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let value: &str = &String::deserialize(deserializer)?;
 
@@ -717,7 +719,7 @@ impl RequestId for Weather {
 
 fn deserialize_polygon<'de, D>(data: D) -> Result<Polygon<f64>, D::Error>
 where
-	D: Deserializer<'de>,
+    D: Deserializer<'de>,
 {
     Ok(Polygon::new(LineString::deserialize(data)?, vec![]))
 }
@@ -777,7 +779,7 @@ where
 impl PartialEq for Weather {
     fn eq(&self, other: &Weather) -> bool {
         // self.latitude == other.latitude &&
-            self.cloud_level == other.cloud_level &&
+        self.cloud_level == other.cloud_level &&
             self.severity == other.severity &&
             self.polygon == other.polygon &&
             self.special_effect_level == other.special_effect_level &&
@@ -798,20 +800,20 @@ impl PartialEq for Weather {
 #[serde(deny_unknown_fields)]
 pub struct Account {
     pub first_warning_timestamp: i64,
-    pub was_suspended: Value,//sometimes bool, sometimes u8
+    pub was_suspended: Value, //sometimes bool, sometimes u8
     pub username: String,
     pub warn_expire_timestamp: i64,
-    pub warn_message_acknowledged: Value,//sometimes bool, sometimes u8
+    pub warn_message_acknowledged: Value, //sometimes bool, sometimes u8
     pub level: u8,
     pub failed_timestamp: i64,
     pub creation_timestamp: i64,
-    pub banned: Value,//sometimes bool, sometimes u8
-    pub warn: Value,//sometimes bool, sometimes u8
+    pub banned: Value, //sometimes bool, sometimes u8
+    pub warn: Value,   //sometimes bool, sometimes u8
     pub last_encounter_time: i64,
     pub spins: u64,
-    pub suspended_message_acknowledged: Value,//sometimes bool, sometimes u8
+    pub suspended_message_acknowledged: Value, //sometimes bool, sometimes u8
     pub failed: String,
-    pub group: Option<Value>,// Absolutely no idea what's the type, it's always null
+    pub group: Option<Value>, // Absolutely no idea what's the type, it's always null
 }
 
 /// Meteo watch request
@@ -824,7 +826,7 @@ pub struct Watch {
     pub point: Point<f64>,
     pub expire: i64,
     // #[serde(skip_deserializing)]
-    // 
+    //
     // pub reference_weather: Option<Weather>,
 }
 
@@ -885,6 +887,7 @@ mod tests {
             r#"[{"message":{"character":44,"display_type":3,"enabled":true,"expiration":1651694400,"grunt_type":44,"id":"6885108217928419841","incident_expire_timestamp":1651694400,"latitude":45.463485,"longitude":9.2027,"pokestop_id":"f2de88dcf5303bfc91868af36d910904.16","pokestop_name":"Fontana Circolare Senz'Acqua Viva","start":1651636800,"style":1,"updated":1651657535,"url":"http://lh3.googleusercontent.com/gqWpWoV3mzBOVDbYOO1VI08feOIJP1-E4r1xqe7Q6ytpiNfnVs1urSIGvl_IAnQia5-xDMr8Yrb5mfo8nOJBqNkm1OkX6Z23b1EPTJXz"},"type":"invasion"},{"message":{"capture_1":0.0,"capture_2":0.0,"capture_3":0.0,"costume":0,"cp":null,"disappear_time":1651662160,"disappear_time_verified":false,"display_pokemon_id":null,"encounter_id":"6604085864133522739","first_seen":1651660960,"form":304,"gender":1,"height":null,"individual_attack":null,"individual_defense":null,"individual_stamina":null,"is_event":false,"last_modified_time":1651660960,"latitude":44.41808,"longitude":8.89338,"move_1":null,"move_2":null,"pokemon_id":63,"pokemon_level":null,"pokestop_id":"4e421a889c554f738fcb1f41126f3ae4.16","pvp":null,"shiny":null,"spawnpoint_id":"None","username":"2T5ycLNc","weather":0,"weight":null},"type":"pokemon"},{"message":{"capture_1":0.20381081104278564,"capture_2":0.28956490755081177,"capture_3":0.3660827875137329,"costume":0,"cp":418,"disappear_time":1651662043,"disappear_time_verified":true,"display_pokemon_id":null,"encounter_id":"15233804735450564751","first_seen":1651660542,"form":1460,"gender":1,"height":1.083377718925476,"individual_attack":9,"individual_defense":11,"individual_stamina":13,"is_event":false,"last_modified_time":1651661674,"latitude":39.20259574378766,"longitude":9.151106923007156,"move_1":206,"move_2":79,"pokemon_id":299,"pokemon_level":16,"pokestop_id":"c39f894d33ea450691cd26aac62e6d73.16","pvp":{"great":[{"cap":50,"competition_rank":1255,"cp":1492,"dense_rank":935,"form":1841,"gender":1,"level":26.5,"ordinal_rank":1255,"percentage":0.954104350930194,"pokemon":476,"rank":935}],"little":[{"cap":50,"competition_rank":1669,"cp":497,"dense_rank":1135,"form":1460,"gender":1,"level":19.0,"ordinal_rank":1669,"percentage":0.9211329569086472,"pokemon":299,"rank":1135}],"ultra":[{"cap":50,"competition_rank":435,"cp":2228,"dense_rank":303,"form":1841,"gender":1,"level":50.0,"ordinal_rank":435,"percentage":0.9400913195945072,"pokemon":476,"rank":303}]},"shiny":false,"spawnpoint_id":"7337961D","username":"AddZ3stOp7","weather":3,"weight":125.26021575927734},"type":"pokemon"},{"message":{"conditions":[{"info":{"pokemon_type_ids":[11]},"type":1}],"is_ar_scan_eligible":0,"item_amount":20,"item_id":0,"item_type":"Mega Energy","latitude":44.42051,"longitude":8.859011,"name":"Sestri: Madonnina sull'arcata","pokemon_costume":0,"pokemon_form":0,"pokemon_id":9,"pokestop_id":"a92cecaea2974225942b2675a04dcc52.16","pokestop_name":"Sestri: Madonnina sull'arcata","pokestop_url":"http://lh3.googleusercontent.com/TLGm_e37TQkjzDYPVCT8cxb993WmiRCcZ2wUdJKLiZAxlWA8UCTl5KpyJZ5pYW6xftT0eH2ZiMxZ2VZKm7w77OwaDBE","quest_condition":"[{\"type\": 1, \"with_pokemon_type\": {\"pokemon_type\": [11]}}]","quest_reward_raw":"[{\"type\": 12, \"exp\": 0, \"item\": {\"item\": 0, \"amount\": 0}, \"stardust\": 0, \"candy\": {\"pokemon_id\": 0, \"amount\": 0}, \"avatar_template_id\": \"\", \"quest_template_id\": \"\", \"pokemon_encounter\": {\"pokemon_id\": 0, \"use_quest_pokemon_encounter_distribution\": false, \"pokemon_display\": {\"costume_value\": 0, \"gender_value\": 0, \"is_shiny\": false, \"form_value\": 0, \"weather_boosted_value\": 0, \"alignment\": 0, \"pokemon_badge\": 0, \"current_temp_evolution\": 0, \"temporary_evolution_finish_ms\": 0, \"temp_evolution_is_locked\": false, \"original_costume\": 0, \"display_id\": 0}, \"is_hidden_ditto\": false, \"ditto_display\": {\"costume_value\": 0, \"gender_value\": 0, \"is_shiny\": false, \"form_value\": 0, \"weather_boosted_value\": 0, \"alignment\": 0, \"pokemon_badge\": 0, \"current_temp_evolution\": 0, \"temporary_evolution_finish_ms\": 0, \"temp_evolution_is_locked\": false, \"original_costume\": 0, \"display_id\": 0}}, \"xl_candy\": {\"pokemon_id\": 0, \"amount\": 0}, \"level_cap\": 0, \"pokecoin\": 0, \"sticker\": {\"sticker_id\": \"\", \"amount\": 0}, \"mega_resource\": {\"pokemon_id\": 9, \"amount\": 20}}]","quest_reward_type":"Energy","quest_reward_type_raw":12,"quest_target":10,"quest_task":"Water Festival: Catch 10 Water-type Pokémon","quest_template":"QUEST_WF_MAY2022_CATCH_WATER_MEDIUM_MEGA","quest_type":"Catch 10 pokémon","quest_type_raw":4,"rewards":[{"info":{"amount":20,"pokemon_id":9},"type":12}],"target":10,"template":"QUEST_WF_MAY2022_CATCH_WATER_MEDIUM_MEGA","timestamp":1652931765,"type":4,"updated":1652931765,"url":"http://lh3.googleusercontent.com/TLGm_e37TQkjzDYPVCT8cxb993WmiRCcZ2wUdJKLiZAxlWA8UCTl5KpyJZ5pYW6xftT0eH2ZiMxZ2VZKm7w77OwaDBE"},"type":"quest"},{"message":{"conditions":[{"type":3,"with_weather_boost":{}}],"is_ar_scan_eligible":0,"item_amount":1,"item_id":705,"item_type":"Pinap Berry","latitude":44.70581,"longitude":11.230965,"name":"Campetto Da Calcetto Publico","pokemon_costume":0,"pokemon_form":0,"pokemon_id":0,"pokestop_id":"d808d2adddcc41d3af8acb50f952d6db.16","pokestop_name":"Campetto Da Calcetto Publico","pokestop_url":"http://lh3.googleusercontent.com/z555WkiJv_y_-uGQv8m6RTI9G72r3m1f4HNuh69_ebjBXt8xCptcLz0Aw_osMxzHYQtJxzXDKni-yGp8exIH-1AaxRca","quest_condition":"[{\"type\": 3, \"with_weather_boost\": {}}]","quest_reward_raw":"[{\"type\": 2, \"exp\": 0, \"item\": {\"item\": 705, \"amount\": 1}, \"stardust\": 0, \"candy\": {\"pokemon_id\": 0, \"amount\": 0}, \"avatar_template_id\": \"\", \"quest_template_id\": \"\", \"pokemon_encounter\": {\"pokemon_id\": 0, \"use_quest_pokemon_encounter_distribution\": false, \"pokemon_display\": {\"costume_value\": 0, \"gender_value\": 0, \"is_shiny\": false, \"form_value\": 0, \"weather_boosted_value\": 0, \"alignment\": 0, \"pokemon_badge\": 0, \"current_temp_evolution\": 0, \"temporary_evolution_finish_ms\": 0, \"temp_evolution_is_locked\": false, \"original_costume\": 0, \"display_id\": 0}, \"is_hidden_ditto\": false, \"ditto_display\": {\"costume_value\": 0, \"gender_value\": 0, \"is_shiny\": false, \"form_value\": 0, \"weather_boosted_value\": 0, \"alignment\": 0, \"pokemon_badge\": 0, \"current_temp_evolution\": 0, \"temporary_evolution_finish_ms\": 0, \"temp_evolution_is_locked\": false, \"original_costume\": 0, \"display_id\": 0}}, \"xl_candy\": {\"pokemon_id\": 0, \"amount\": 0}, \"level_cap\": 0, \"pokecoin\": 0, \"sticker\": {\"sticker_id\": \"\", \"amount\": 0}, \"mega_resource\": {\"pokemon_id\": 0, \"amount\": 0}}]","quest_reward_type":"Item","quest_reward_type_raw":2,"quest_target":5,"quest_task":"Catch 5 Pokémon with Weather Boost","quest_template":"CHALLENGE_CATCH_WEATHER_EASY","quest_type":"Catch 5 pokémon","quest_type_raw":4,"rewards":[{"info":{"amount":1,"item_id":705},"type":2}],"target":5,"template":"CHALLENGE_CATCH_WEATHER_EASY","timestamp":1652950475,"type":4,"updated":1652950475,"url":"http://lh3.googleusercontent.com/z555WkiJv_y_-uGQv8m6RTI9G72r3m1f4HNuh69_ebjBXt8xCptcLz0Aw_osMxzHYQtJxzXDKni-yGp8exIH-1AaxRca"},"type":"quest"},{"message":{"conditions":[{"info":{"hit":true,"throw_type_id":0},"type":14},{"type":15}],"is_ar_scan_eligible":0,"item_amount":500,"item_id":0,"item_type":"Stardust","latitude":44.70671,"longitude":11.230888,"name":"Itinerario Delle Favole 1/5","pokemon_costume":0,"pokemon_form":0,"pokemon_id":0,"pokestop_id":"22cf60bb16644f33bffe4707de650cb8.16","pokestop_name":"Itinerario Delle Favole 1/5","pokestop_url":"http://lh3.googleusercontent.com/0mo-nkzxTyiK4gpZUL619TeeK3Exq_kUhJ9s6Zlx4p1KZ5R2ZuQj8rxMvavbYHC4jIxyjg-M-k9H7mFy9chsTFjyNJvS","quest_condition":"[{\"type\": 14, \"with_throw_type\": {\"throw_type\": 0, \"hit\": true}}, {\"type\": 15}]","quest_reward_raw":"[{\"type\": 3, \"exp\": 0, \"item\": {\"item\": 0, \"amount\": 0}, \"stardust\": 500, \"candy\": {\"pokemon_id\": 0, \"amount\": 0}, \"avatar_template_id\": \"\", \"quest_template_id\": \"\", \"pokemon_encounter\": {\"pokemon_id\": 0, \"use_quest_pokemon_encounter_distribution\": false, \"pokemon_display\": {\"costume_value\": 0, \"gender_value\": 0, \"is_shiny\": false, \"form_value\": 0, \"weather_boosted_value\": 0, \"alignment\": 0, \"pokemon_badge\": 0, \"current_temp_evolution\": 0, \"temporary_evolution_finish_ms\": 0, \"temp_evolution_is_locked\": false, \"original_costume\": 0, \"display_id\": 0}, \"is_hidden_ditto\": false, \"ditto_display\": {\"costume_value\": 0, \"gender_value\": 0, \"is_shiny\": false, \"form_value\": 0, \"weather_boosted_value\": 0, \"alignment\": 0, \"pokemon_badge\": 0, \"current_temp_evolution\": 0, \"temporary_evolution_finish_ms\": 0, \"temp_evolution_is_locked\": false, \"original_costume\": 0, \"display_id\": 0}}, \"xl_candy\": {\"pokemon_id\": 0, \"amount\": 0}, \"level_cap\": 0, \"pokecoin\": 0, \"sticker\": {\"sticker_id\": \"\", \"amount\": 0}, \"mega_resource\": {\"pokemon_id\": 0, \"amount\": 0}}]","quest_reward_type":"Stardust","quest_reward_type_raw":3,"quest_target":5,"quest_task":"Make 5 Curveball Throws in a row","quest_template":"CHALLENGE_LAND_CURVEBALL_INAROW_MODERATE","quest_type":"Land 5 throw(s)","quest_type_raw":16,"rewards":[{"info":{"amount":500},"type":3}],"target":5,"template":"CHALLENGE_LAND_CURVEBALL_INAROW_MODERATE","timestamp":1652952806,"type":16,"updated":1652952806,"url":"http://lh3.googleusercontent.com/0mo-nkzxTyiK4gpZUL619TeeK3Exq_kUhJ9s6Zlx4p1KZ5R2ZuQj8rxMvavbYHC4jIxyjg-M-k9H7mFy9chsTFjyNJvS"},"type":"quest"},{"message":{"conditions":[],"is_ar_scan_eligible":0,"item_amount":500,"item_id":0,"item_type":"Stardust","latitude":44.70939,"longitude":11.225602,"name":"Parco Giochi de “La Madonnina”","pokemon_costume":0,"pokemon_form":0,"pokemon_id":0,"pokestop_id":"47d90edc584f40e78bea30f65e9145ac.16","pokestop_name":"Parco Giochi de “La Madonnina”","pokestop_url":"http://lh3.googleusercontent.com/X2X_rEcHdyvYnjmv-rSR9cgLd-dCZPDEoqZXB6eIpKZ-rnVHG_LfBhiiWtAaICtZoIwn-_NtfySut8_aSSgyD8tDa1g","quest_condition":"[]","quest_reward_raw":"[{\"type\": 3, \"exp\": 0, \"item\": {\"item\": 0, \"amount\": 0}, \"stardust\": 500, \"candy\": {\"pokemon_id\": 0, \"amount\": 0}, \"avatar_template_id\": \"\", \"quest_template_id\": \"\", \"pokemon_encounter\": {\"pokemon_id\": 0, \"use_quest_pokemon_encounter_distribution\": false, \"pokemon_display\": {\"costume_value\": 0, \"gender_value\": 0, \"is_shiny\": false, \"form_value\": 0, \"weather_boosted_value\": 0, \"alignment\": 0, \"pokemon_badge\": 0, \"current_temp_evolution\": 0, \"temporary_evolution_finish_ms\": 0, \"temp_evolution_is_locked\": false, \"original_costume\": 0, \"display_id\": 0}, \"is_hidden_ditto\": false, \"ditto_display\": {\"costume_value\": 0, \"gender_value\": 0, \"is_shiny\": false, \"form_value\": 0, \"weather_boosted_value\": 0, \"alignment\": 0, \"pokemon_badge\": 0, \"current_temp_evolution\": 0, \"temporary_evolution_finish_ms\": 0, \"temp_evolution_is_locked\": false, \"original_costume\": 0, \"display_id\": 0}}, \"xl_candy\": {\"pokemon_id\": 0, \"amount\": 0}, \"level_cap\": 0, \"pokecoin\": 0, \"sticker\": {\"sticker_id\": \"\", \"amount\": 0}, \"mega_resource\": {\"pokemon_id\": 0, \"amount\": 0}}]","quest_reward_type":"Stardust","quest_reward_type_raw":3,"quest_target":5,"quest_task":"Use 5 Berries to help catch Pokémon","quest_template":"CHALLENGE_BERRY_MODERATE","quest_type":"Catch 5 pokémon with berrie(s)","quest_type_raw":13,"rewards":[{"info":{"amount":500},"type":3}],"target":5,"template":"CHALLENGE_BERRY_MODERATE","timestamp":1652953307,"type":13,"updated":1652953307,"url":"http://lh3.googleusercontent.com/X2X_rEcHdyvYnjmv-rSR9cgLd-dCZPDEoqZXB6eIpKZ-rnVHG_LfBhiiWtAaICtZoIwn-_NtfySut8_aSSgyD8tDa1g"},"type":"quest"}]"#,
             r#"[{"message":{"costume":0,"disappear_time":1657659722,"display_pokemon_id":null,"encounter_id":"9108896864671983036","gender":1,"latitude":44.42161,"longitude":8.903905,"pokemon_id":193,"pokestop_id":"8585fb379b1d4629886c0fe5f9bca10f.16","pokestop_name":"Villa S. Catterina Edicola Mariana","pokestop_url":"http://lh3.googleusercontent.com/zgAmiUK-VPWyjFqZ1VwR-7pyA_-D70G4LW2Fda1rWlHbNY_3y8ptHtDzMJNZ3VenCV1C1Y8LVjaEyamlPKSfKqjbmg","rarity":3,"seen_type":"nearby_stop","spawnpoint_id":0,"verified":false},"type":"pokemon"},{"message":{"cell_coords":[[44.409724950719635,8.90246028587286],[44.40950888446647,8.90521920277805],[44.41185210563025,8.90521920277805],[44.41206817224696,8.90246028587286]],"cell_id":1356499656976105472,"costume":0,"disappear_time":1657700662,"display_pokemon_id":null,"encounter_id":"15011430633292089280","form":945,"gender":1,"latitude":44.41078855222164,"longitude":8.90383973216774,"pokemon_id":263,"rarity":1,"seen_type":"nearby_cell","spawnpoint_id":0,"verified":false},"type":"pokemon"}]"#,
             r#"[{"message":{"capture_1":0.6143157482147217,"capture_2":0.7604765892028809,"capture_3":0.8512476086616516,"costume":0,"cp":148,"disappear_time":1662734305,"disappear_time_verified":true,"display_pokemon_id":null,"encounter_id":"7762580162238951871","first_seen":1662732563,"form":307,"gender":2,"height":1.4967771768569946,"individual_attack":13,"individual_defense":10,"individual_stamina":14,"is_event":false,"last_modified_time":1662732831,"latitude":45.46338442199389,"longitude":9.191372339492448,"move_1":226,"move_2":86,"pokemon_id":64,"pokemon_level":3,"pokestop_id":"995275f0264e38a59c0192ad5f365cde.16","pvp":{"great":[{"cap":50,"competition_rank":1711,"cp":1482,"dense_rank":1242,"form":307,"gender":2,"level":26.0,"ordinal_rank":1712,"percentage":0.949170335081023,"pokemon":64,"rank":1712},{"cap":50,"competition_rank":713,"cp":1492,"dense_rank":398,"form":310,"gender":2,"level":17.5,"ordinal_rank":714,"percentage":0.9655406666159876,"pokemon":65,"rank":714},{"cap":50,"competition_rank":2739,"cp":1453,"dense_rank":1243,"evolution":1,"gender":2,"level":11.5,"ordinal_rank":2740,"percentage":0.9335657532273732,"pokemon":65,"rank":2740}],"little":[{"cap":50,"competition_rank":3036,"cp":480,"dense_rank":1208,"form":307,"gender":2,"level":8.5,"ordinal_rank":3036,"percentage":0.9043733260495148,"pokemon":64,"rank":3036},{"cap":50,"competition_rank":435,"cp":492,"dense_rank":193,"form":310,"gender":2,"level":6.0,"ordinal_rank":436,"percentage":0.9611408290392848,"pokemon":65,"rank":436},{"cap":50,"competition_rank":1403,"cp":463,"dense_rank":678,"evolution":1,"gender":2,"level":4.0,"ordinal_rank":1403,"percentage":0.8658672682895497,"pokemon":65,"rank":1403}],"ultra":[{"cap":50,"competition_rank":2177,"cp":2473,"dense_rank":1713,"form":310,"gender":2,"level":29.0,"ordinal_rank":2178,"percentage":0.9574823123001164,"pokemon":65,"rank":2178},{"cap":50,"competition_rank":1675,"cp":2463,"dense_rank":1083,"evolution":1,"gender":2,"level":19.5,"ordinal_rank":1676,"percentage":0.9584156684880192,"pokemon":65,"rank":1676}]},"seen_type":"encounter","shiny":false,"spawnpoint_id":"6C6AEC4D","username":"Bu7NibFiche","weather":0,"weight":59.6161994934082},"type":"pokemon"}]"#,
+            r#"[{"message":{"ar_scan_eligible":false,"enabled":true,"ex_raid_eligible":false,"guard_pokemon_id":607,"id":"35d468a2f98e4acbbbd64bff91b25ded.16","in_battle":true,"last_modified":1666245572,"latitude":45.397674,"longitude":11.874841,"name":"Padova - Testina Barbuta","partner_id":0,"power_up_end_timestamp":0,"power_up_level":0,"power_up_points":60,"slots_available":2,"sponsor_id":0,"team_id":2,"total_cp":1311,"url":"http://lh3.googleusercontent.com/BMp9-t7tei3kExRrI5730adLEuDAaS_P5gMdeYAiHOw4XGJXyKCvSpjRLrAeEY0zmiSkOXwsSgO1zczTODYGFQEA3Zed"},"type":"gym"}]"#,
         ];
         let mut weathers = Vec::new();
         for s in &strings {

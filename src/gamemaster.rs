@@ -1,6 +1,12 @@
 //! This is a porting of https://github.com/RealDeviceMap/RealDeviceMap/blob/master/Sources/RealDeviceMapLib/Misc/PVPStatsManager.swift
 
-use std::{sync::Arc, time::{Duration, SystemTime}, collections::{BTreeMap, HashMap}, ops::Deref, marker::PhantomData};
+use std::{
+    collections::{BTreeMap, HashMap},
+    marker::PhantomData,
+    ops::Deref,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 use arc_swap::ArcSwap;
 
@@ -10,11 +16,11 @@ use serde::{Deserialize, Deserializer};
 
 use tokio::time::interval;
 
-use pogo_gamemaster_entities::{TemplateWrapper, EvolutionBranch, PokemonSettings};
+use pogo_gamemaster_entities::{EvolutionBranch, PokemonSettings, TemplateWrapper};
 
-use tracing::{error, debug, warn};
+use tracing::{debug, error, warn};
 
-use crate::{PvpRanking, Gender};
+use crate::{Gender, PvpRanking};
 
 type Pvp = Option<Vec<PvpRanking>>;
 
@@ -180,9 +186,7 @@ impl From<&PokemonSettings> for Stats {
     fn from(p: &PokemonSettings) -> Self {
         Stats {
             stats: p.stats,
-            evolutions: p.evolution_branch.as_ref().map(|ebs| {
-                ebs.iter().filter_map(|eb| eb.try_into().ok()).collect()
-            }),
+            evolutions: p.evolution_branch.as_ref().map(|ebs| ebs.iter().filter_map(|eb| eb.try_into().ok()).collect()),
         }
     }
 }
@@ -280,35 +284,33 @@ pub async fn load_master_file() -> Result<(), ()> {
         let etag = ETAG.load();
         if let Some(header) = res.headers().get("eTag") {
             if etag.as_ref() == header.as_ref() {
-                warn!("Skipping update because etag equals to last: {} == {}", String::from_utf8_lossy(etag.as_ref()), String::from_utf8_lossy(header.as_ref()));
+                warn!(
+                    "Skipping update because etag equals to last: {} == {}",
+                    String::from_utf8_lossy(etag.as_ref()),
+                    String::from_utf8_lossy(header.as_ref())
+                );
                 return Ok(());
             }
 
             Some(header.as_ref().to_owned())
-        }
-        else {
+        } else {
             None
         }
     };
 
-    let root = res.json::<Vec<TemplateWrapper>>()
-        .await
-        .map_err(|e| error!("GameMaster decode error: {}", e))?;
+    let root = res.json::<Vec<TemplateWrapper>>().await.map_err(|e| error!("GameMaster decode error: {}", e))?;
 
-    let stats = root.iter()
-        .filter_map(|t| t.data.pokemon.as_ref())
-        .map(|p| (p.into(), p.into()))
-        .collect();
+    let stats = root.iter().filter_map(|t| t.data.pokemon.as_ref()).map(|p| (p.into(), p.into())).collect();
 
-    let helper = PvpHelper {
-        stats: &stats,
-    };
-    let cache = root.iter()
+    let helper = PvpHelper { stats: &stats };
+    let cache = root
+        .iter()
         .filter_map(|t| t.data.pokemon.as_ref())
         .map(|p| (p.into(), Arc::new(helper._get_top_pvp(&p.unique_id, p.form.as_deref(), League::Great))))
         .collect();
     GREAT_LEAGUE.swap(Arc::new(cache));
-    let cache = root.iter()
+    let cache = root
+        .iter()
         .filter_map(|t| t.data.pokemon.as_ref())
         .map(|p| (p.into(), Arc::new(helper._get_top_pvp(&p.unique_id, p.form.as_deref(), League::Ultra))))
         .collect();
@@ -342,12 +344,10 @@ struct IV {
     pub stamina: u8,
 }
 
-fn iv_all() -> impl Iterator<Item=IV> {
-    (0..=15).flat_map(|attack| (0..=15).flat_map(move |defense| (0..=15).map(move |stamina| IV {
-        attack,
-        defense,
-        stamina,
-    })))
+fn iv_all() -> impl Iterator<Item = IV> {
+    (0..=15).flat_map(|attack| {
+        (0..=15).flat_map(move |defense| (0..=15).map(move |stamina| IV { attack, defense, stamina }))
+    })
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -367,10 +367,13 @@ impl League {
 
 fn pvp_ranking<PC, FC>(pokemon: &crate::Pokemon, league: League) -> Pvp
 where
-    PC: Cache<Id=u16>,
-    FC: Cache<Id=u16>,
+    PC: Cache<Id = u16>,
+    FC: Cache<Id = u16>,
 {
-    debug!("attack: {:?} defense: {:?} stamina: {:?} level: {:?}", pokemon.individual_attack, pokemon.individual_defense, pokemon.individual_stamina, pokemon.pokemon_level);
+    debug!(
+        "attack: {:?} defense: {:?} stamina: {:?} level: {:?}",
+        pokemon.individual_attack, pokemon.individual_defense, pokemon.individual_stamina, pokemon.pokemon_level
+    );
     let iv = IV {
         attack: pokemon.individual_attack?,
         defense: pokemon.individual_defense?,
@@ -383,36 +386,46 @@ where
         None => {
             debug!("Pokemon {} not found", pokemon.pokemon_id);
             return None;
-        },
+        }
     };
     let form = pokemon.form.and_then(FC::get);
     let costume = pokemon.costume.and_then(FC::get);
 
-    let pvp = PvpHelper::get_pvp_stats_with_evolutions(&name, form.as_deref(), pokemon.gender, costume.as_deref(), iv, level, league);
+    let pvp = PvpHelper::get_pvp_stats_with_evolutions(
+        &name,
+        form.as_deref(),
+        pokemon.gender,
+        costume.as_deref(),
+        iv,
+        level,
+        league,
+    );
     if pvp.is_empty() {
         debug!("No combinations found");
         None
-    }
-    else {
-        Some(pvp.into_iter().filter_map(|(p, r)| {
-            if let Some(pokemon) = PC::reverse(&p.pokemon) {
-                Some(PvpRanking {
-                    pokemon,
-                    form: p.form.as_deref().and_then(FC::reverse),
-                    gender: p.gender,
-                    rank: Some(r.rank as u16),
-                    dense_rank: Some(r.rank as u16),
-                    percentage: Some(r.percentage),
-                    cp: r.ivs.iter().map(|iv| iv.cp).next(),
-                    level: r.ivs.iter().map(|iv| iv.level as f32).next(),
-                    ..Default::default()
+    } else {
+        Some(
+            pvp.into_iter()
+                .filter_map(|(p, r)| {
+                    if let Some(pokemon) = PC::reverse(&p.pokemon) {
+                        Some(PvpRanking {
+                            pokemon,
+                            form: p.form.as_deref().and_then(FC::reverse),
+                            gender: p.gender,
+                            rank: Some(r.rank as u16),
+                            dense_rank: Some(r.rank as u16),
+                            percentage: Some(r.percentage),
+                            cp: r.ivs.iter().map(|iv| iv.cp).next(),
+                            level: r.ivs.iter().map(|iv| iv.level as f32).next(),
+                            ..Default::default()
+                        })
+                    } else {
+                        debug!("Pokemon {} not found", p.pokemon);
+                        None
+                    }
                 })
-            }
-            else {
-                debug!("Pokemon {} not found", p.pokemon);
-                None
-            }
-        }).collect())
+                .collect(),
+        )
     }
 }
 
@@ -449,17 +462,19 @@ impl<'a> PvpHelper<'a> {
     */
     fn get_pvp_stats(pokemon: &str, form: Option<&str>, iv: IV, level: f64, league: League) -> Option<Response> {
         let stats = Self::get_top_pvp(pokemon, form, league)?;
-        let index = stats.iter().position(|value| {
-            value.ivs.iter().any(|ivlevel| {
-                ivlevel.iv == iv && ivlevel.level >= level
-            })
-        })?;
+        let index = stats
+            .iter()
+            .position(|value| value.ivs.iter().any(|ivlevel| ivlevel.iv == iv && ivlevel.level >= level))?;
         let max = stats[0].rank as f64;
         let value = stats[index].rank as f64;
         Some(Response {
             rank: (index as u32) + 1,
             percentage: value / max,
-            ivs: stats[index].ivs.iter().find_map(|ivlevel| (ivlevel.iv == iv).then(|| vec![ivlevel.clone()])).unwrap_or_default(),
+            ivs: stats[index]
+                .ivs
+                .iter()
+                .find_map(|ivlevel| (ivlevel.iv == iv).then(|| vec![ivlevel.clone()]))
+                .unwrap_or_default(),
         })
     }
 
@@ -490,7 +505,15 @@ impl<'a> PvpHelper<'a> {
         return result
     }
     */
-    fn get_pvp_stats_with_evolutions(pokemon: &str, form: Option<&str>, gender: Gender, costume: Option<&str>, iv: IV, level: f64, league: League) -> Vec<(PokemonWithFormAndGender, Response)> {
+    fn get_pvp_stats_with_evolutions(
+        pokemon: &str,
+        form: Option<&str>,
+        gender: Gender,
+        costume: Option<&str>,
+        iv: IV,
+        level: f64,
+        league: League,
+    ) -> Vec<(PokemonWithFormAndGender, Response)> {
         let current = Self::get_pvp_stats(pokemon, form, iv, level, league);
         let mut result = if let Some(c) = current {
             vec![(
@@ -499,27 +522,30 @@ impl<'a> PvpHelper<'a> {
                     form: form.map(normalize),
                     gender: Some(gender),
                 },
-                c
+                c,
             )]
-        }
-        else {
+        } else {
             vec![]
         };
         if form.map(|s| s.contains("noevolve")) == Some(true) {
             return result;
         }
 
-        let index = PokemonWithFormAndGender {
-            pokemon: normalize(pokemon),
-            form: form.map(normalize),
-            gender: None,
-        };
+        let index = PokemonWithFormAndGender { pokemon: normalize(pokemon), form: form.map(normalize), gender: None };
         let stats = STATS.load();
         let stat = stats.get(&index);
         if let Some(evolutions) = stat.and_then(|s| s.evolutions.as_ref()) {
             for evolution in evolutions {
                 if evolution.gender.is_none() || evolution.gender == Some(gender) {
-                    result.extend(Self::get_pvp_stats_with_evolutions(&evolution.pokemon, form, gender, costume, iv, level, league));
+                    result.extend(Self::get_pvp_stats_with_evolutions(
+                        &evolution.pokemon,
+                        form,
+                        gender,
+                        costume,
+                        iv,
+                        level,
+                        league,
+                    ));
                 }
             }
         }
@@ -596,20 +622,12 @@ impl<'a> PvpHelper<'a> {
     }
     */
     fn _get_top_pvp(&self, pokemon: &str, form: Option<&str>, league: League) -> Vec<Response> {
-        let info = PokemonWithFormAndGender {
-            pokemon: normalize(pokemon),
-            form: form.map(normalize),
-            gender: None,
-        };
+        let info = PokemonWithFormAndGender { pokemon: normalize(pokemon), form: form.map(normalize), gender: None };
 
         self.get_pvp_values_ordered(&self.stats[&info], league.get_cap())
     }
     fn get_top_pvp(pokemon: &str, form: Option<&str>, league: League) -> Option<Arc<Vec<Response>>> {
-        let info = PokemonWithFormAndGender {
-            pokemon: normalize(pokemon),
-            form: form.map(normalize),
-            gender: None,
-        };
+        let info = PokemonWithFormAndGender { pokemon: normalize(pokemon), form: form.map(normalize), gender: None };
 
         let cache = match league {
             League::Great => GREAT_LEAGUE.load(),
@@ -664,16 +682,9 @@ impl<'a> PvpHelper<'a> {
             }
             if max_level > 0.0 {
                 let value = self.get_pvp_value(iv, max_level, stats);
-                let rank = ranking.entry(value).or_insert_with(|| Response {
-                    rank: value,
-                    percentage: 0.0,
-                    ivs: Vec::new(),
-                });
-                rank.ivs.push(PvpIV {
-                    iv,
-                    level,
-                    cp: max_cp,
-                });
+                let rank =
+                    ranking.entry(value).or_insert_with(|| Response { rank: value, percentage: 0.0, ivs: Vec::new() });
+                rank.ivs.push(PvpIV { iv, level, cp: max_cp });
             }
         }
         ranking.into_iter().rev().map(|(_, r)| r).collect()
@@ -730,18 +741,14 @@ impl<PC, FC> Deref for PokemonWithPvpInfo<PC, FC> {
 
 impl<PC, FC> From<crate::Pokemon> for PokemonWithPvpInfo<PC, FC> {
     fn from(inner: crate::Pokemon) -> Self {
-        PokemonWithPvpInfo {
-            inner,
-            _pc: PhantomData,
-            _fc: PhantomData,
-        }
+        PokemonWithPvpInfo { inner, _pc: PhantomData, _fc: PhantomData }
     }
 }
 
 impl<'de, PC, FC> Deserialize<'de> for PokemonWithPvpInfo<PC, FC>
 where
-    PC: Cache<Id=u16>,
-    FC: Cache<Id=u16>,
+    PC: Cache<Id = u16>,
+    FC: Cache<Id = u16>,
 {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let mut pokemon = crate::Pokemon::deserialize(deserializer)?;
@@ -757,11 +764,7 @@ where
             pokemon.pvp_rankings_great_league = pvp_ranking::<PC, FC>(&pokemon, League::Great);
             pokemon.pvp_rankings_ultra_league = pvp_ranking::<PC, FC>(&pokemon, League::Ultra);
         }
-        Ok(PokemonWithPvpInfo {
-            inner: pokemon,
-            _pc: PhantomData,
-            _fc: PhantomData,
-        })
+        Ok(PokemonWithPvpInfo { inner: pokemon, _pc: PhantomData, _fc: PhantomData })
     }
 }
 
@@ -803,8 +806,14 @@ mod tests {
         super::load_master_file().await.unwrap();
 
         let p: crate::Pokemon = serde_json::from_str(r#"{"capture_1":0.20381081104278564,"capture_2":0.28956490755081177,"capture_3":0.3660827875137329,"costume":0,"cp":418,"disappear_time":1651662043,"disappear_time_verified":true,"display_pokemon_id":null,"encounter_id":"15233804735450564751","first_seen":1651660542,"form":1460,"gender":1,"height":1.083377718925476,"individual_attack":9,"individual_defense":11,"individual_stamina":13,"is_event":false,"last_modified_time":1651661674,"latitude":39.20259574378766,"longitude":9.151106923007156,"move_1":206,"move_2":79,"pokemon_id":299,"pokemon_level":16,"pokestop_id":"c39f894d33ea450691cd26aac62e6d73.16","pvp":{"great":[{"cap":50,"competition_rank":1255,"cp":1492,"dense_rank":935,"form":1841,"gender":1,"level":26.5,"ordinal_rank":1255,"percentage":0.954104350930194,"pokemon":476,"rank":935}],"little":[{"cap":50,"competition_rank":1669,"cp":497,"dense_rank":1135,"form":1460,"gender":1,"level":19.0,"ordinal_rank":1669,"percentage":0.9211329569086472,"pokemon":299,"rank":1135}],"ultra":[{"cap":50,"competition_rank":435,"cp":2228,"dense_rank":303,"form":1841,"gender":1,"level":50.0,"ordinal_rank":435,"percentage":0.9400913195945072,"pokemon":476,"rank":303}]},"shiny":false,"spawnpoint_id":"7337961D","username":"AddZ3stOp7","weather":3,"weight":125.26021575927734}"#).unwrap();
-        assert_eq!(p.pvp.as_ref().and_then(|hm| hm.get("great")), super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Great).as_ref());
-        assert_eq!(p.pvp.as_ref().and_then(|hm| hm.get("ultra")), super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Ultra).as_ref());
+        assert_eq!(
+            p.pvp.as_ref().and_then(|hm| hm.get("great")),
+            super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Great).as_ref()
+        );
+        assert_eq!(
+            p.pvp.as_ref().and_then(|hm| hm.get("ultra")),
+            super::pvp_ranking::<FakeCache, FakeCache>(&p, super::League::Ultra).as_ref()
+        );
     }
 
     #[tokio::test]
