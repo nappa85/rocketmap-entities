@@ -170,7 +170,7 @@ impl TryFrom<&EvolutionBranch> for PokemonWithFormAndGender {
 impl From<&PokemonSettings> for PokemonWithFormAndGender {
     fn from(p: &PokemonSettings) -> Self {
         PokemonWithFormAndGender {
-            pokemon: normalize(&p.unique_id),
+            pokemon: normalize(&p.pokemon_id),
             form: p.form.as_deref().map(normalize),
             gender: None,
         }
@@ -185,8 +185,12 @@ struct Stats {
 impl From<&PokemonSettings> for Stats {
     fn from(p: &PokemonSettings) -> Self {
         Stats {
-            stats: p.stats,
-            evolutions: p.evolution_branch.as_ref().map(|ebs| ebs.iter().filter_map(|eb| eb.try_into().ok()).collect()),
+            stats: p.stats.clone(),
+            evolutions: if p.evolution_branch.is_empty() {
+                None
+            } else {
+                Some(p.evolution_branch.iter().filter_map(|eb| PokemonWithFormAndGender::try_from(eb).ok()).collect())
+            },
         }
     }
 }
@@ -300,19 +304,19 @@ pub async fn load_master_file() -> Result<(), ()> {
 
     let root = res.json::<Vec<TemplateWrapper>>().await.map_err(|e| error!("GameMaster decode error: {}", e))?;
 
-    let stats = root.iter().filter_map(|t| t.data.pokemon.as_ref()).map(|p| (p.into(), p.into())).collect();
+    let stats = root.iter().filter_map(|t| t.data.pokemon_settings.as_ref()).map(|p| (p.into(), p.into())).collect();
 
     let helper = PvpHelper { stats: &stats };
     let cache = root
         .iter()
-        .filter_map(|t| t.data.pokemon.as_ref())
-        .map(|p| (p.into(), Arc::new(helper._get_top_pvp(&p.unique_id, p.form.as_deref(), League::Great))))
+        .filter_map(|t| t.data.pokemon_settings.as_ref())
+        .map(|p| (p.into(), Arc::new(helper._get_top_pvp(&p.pokemon_id, p.form.as_deref(), League::Great))))
         .collect();
     GREAT_LEAGUE.swap(Arc::new(cache));
     let cache = root
         .iter()
-        .filter_map(|t| t.data.pokemon.as_ref())
-        .map(|p| (p.into(), Arc::new(helper._get_top_pvp(&p.unique_id, p.form.as_deref(), League::Ultra))))
+        .filter_map(|t| t.data.pokemon_settings.as_ref())
+        .map(|p| (p.into(), Arc::new(helper._get_top_pvp(&p.pokemon_id, p.form.as_deref(), League::Ultra))))
         .collect();
     ULTRA_LEAGUE.swap(Arc::new(cache));
 
@@ -701,9 +705,9 @@ impl<'a> PvpHelper<'a> {
     */
     fn get_pvp_value(&self, iv: IV, level: f64, stats: &Stats) -> u32 {
         let multiplier = CP_MULTIPLIERS[get_level(level)];
-        let attack = ((stats.stats.base_attack + iv.attack as u16) as f64) * multiplier;
-        let defense = ((stats.stats.base_defense + iv.defense as u16) as f64) * multiplier;
-        let stamina = ((stats.stats.base_stamina + iv.stamina as u16) as f64) * multiplier;
+        let attack = ((stats.stats.base_attack.unwrap_or_default() + iv.attack as i64) as f64) * multiplier;
+        let defense = ((stats.stats.base_defense.unwrap_or_default() + iv.defense as i64) as f64) * multiplier;
+        let stamina = ((stats.stats.base_stamina.unwrap_or_default() + iv.stamina as i64) as f64) * multiplier;
         (attack * defense * stamina.floor()).round() as u32
     }
 
@@ -717,9 +721,9 @@ impl<'a> PvpHelper<'a> {
     }
     */
     fn get_cp_value(&self, iv: IV, level: f64, stats: &Stats) -> u16 {
-        let attack = (stats.stats.base_attack + iv.attack as u16) as f64;
-        let defense = ((stats.stats.base_defense + iv.defense as u16) as f64).powf(0.5);
-        let stamina = ((stats.stats.base_stamina + iv.stamina as u16) as f64).powf(0.5);
+        let attack = (stats.stats.base_attack.unwrap_or_default() + iv.attack as i64) as f64;
+        let defense = ((stats.stats.base_defense.unwrap_or_default() + iv.defense as i64) as f64).powf(0.5);
+        let stamina = ((stats.stats.base_stamina.unwrap_or_default() + iv.stamina as i64) as f64).powf(0.5);
         let multiplier = CP_MULTIPLIERS[get_level(level)].powi(2);
         ((attack * defense * stamina * multiplier / 10.0).floor() as u16).max(10)
     }

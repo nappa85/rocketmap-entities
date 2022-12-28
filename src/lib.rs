@@ -856,7 +856,7 @@ pub struct DeviceTier {
 }
 
 fn today() -> NaiveDate {
-    Local::today().naive_local()
+    Local::now().date_naive()
 }
 
 #[cfg(test)]
