@@ -212,7 +212,7 @@ pub struct Pokemon {
     pub is_event: Option<bool>,
     pub rarity: Option<u8>,
     pub seen_type: Option<String>,
-    pub size: Option<u8>,
+    pub size: Option<i8>,
 }
 
 impl RequestId for Pokemon {
