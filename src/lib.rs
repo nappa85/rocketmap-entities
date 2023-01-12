@@ -361,7 +361,10 @@ pub struct Pokestop {
 
 impl Pokestop {
     pub fn get_grunt_type(&self) -> Option<u16> {
-        self.grunt_type.or(self.character).or_else(|| (self.display_type == Some(8)).then_some(352 /* kecleon */))
+        self.grunt_type
+            .or(self.character)
+            .and_then(|i| (i > 0).then_some(i)) // filter zero value
+            .or_else(|| (self.display_type == Some(8)).then_some(352)) // kecleon
     }
 }
 
