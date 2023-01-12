@@ -359,6 +359,12 @@ pub struct Pokestop {
     pub style: Option<u8>,
 }
 
+impl Pokestop {
+    pub fn get_grunt_type(&self) -> Option<u16> {
+        self.grunt_type.or(self.character).or_else(|| (self.display_type == Some(8)).then_some(352 /* kecleon */))
+    }
+}
+
 impl RequestId for Pokestop {
     fn get_id(&self) -> Option<String> {
         Some(format!(
