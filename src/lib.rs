@@ -146,7 +146,7 @@ where
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct Pokemon {
     #[serde(deserialize_with = "string_or_int")]
     pub spawnpoint_id: Option<String>,
@@ -306,7 +306,7 @@ impl Serialize for Gender {
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct PvpRanking {
     pub cap: Option<u8>,
     pub rank: Option<u16>,
@@ -323,7 +323,7 @@ pub struct PvpRanking {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct Pokestop {
     pub id: Option<String>,
     pub pokestop_id: String,
@@ -378,7 +378,7 @@ impl RequestId for Pokestop {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct Gym {
     #[serde(alias = "id")]
     pub gym_id: String,
@@ -470,7 +470,7 @@ impl<'de> Deserialize<'de> for Team {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct GymDetails {
     pub id: String,
     pub name: String,
@@ -505,7 +505,7 @@ pub struct GymDetails {
 impl RequestId for GymDetails {}
 
 // #[derive(Clone, Debug, Deserialize)]
-// #[serde(deny_unknown_fields)]
+// //#[serde(deny_unknown_fields)]
 // pub struct GymPokemon {
 //     pokemon_uid: usize,
 //     pokemon_id: u16,
@@ -529,7 +529,7 @@ impl RequestId for GymDetails {}
 // }
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct Raid {
     #[serde(alias = "id")]
     pub gym_id: String,
@@ -574,7 +574,7 @@ pub struct Raid {
 impl RequestId for Raid {}
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct Scheduler {
     pub name: String,
     pub instance: String,
@@ -583,7 +583,7 @@ pub struct Scheduler {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct Captcha {
     pub status_name: String,
     pub account: String,
@@ -633,7 +633,7 @@ impl<'de> Deserialize<'de> for CaptchaStatus {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct Quest {
     pub updated: i64,
     pub timestamp: Option<i64>,
@@ -676,7 +676,7 @@ pub struct Quest {
 impl RequestId for Quest {}
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct Weather {
     pub latitude: f64,
     pub cloud_level: Option<u8>,
@@ -808,7 +808,7 @@ impl PartialEq for Weather {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct Account {
     pub first_warning_timestamp: i64,
     pub was_suspended: Value, //sometimes bool, sometimes u8
@@ -825,6 +825,7 @@ pub struct Account {
     pub suspended_message_acknowledged: Value, //sometimes bool, sometimes u8
     pub failed: String,
     pub group: Option<Value>, // Absolutely no idea what's the type, it's always null
+    pub disabled: Option<bool>,
 }
 
 /// Meteo watch request
@@ -901,6 +902,7 @@ mod tests {
             r#"[{"message":{"ar_scan_eligible":false,"enabled":true,"ex_raid_eligible":false,"guard_pokemon_id":607,"id":"35d468a2f98e4acbbbd64bff91b25ded.16","in_battle":true,"last_modified":1666245572,"latitude":45.397674,"longitude":11.874841,"name":"Padova - Testina Barbuta","partner_id":0,"power_up_end_timestamp":0,"power_up_level":0,"power_up_points":60,"slots_available":2,"sponsor_id":0,"team_id":2,"total_cp":1311,"url":"http://lh3.googleusercontent.com/BMp9-t7tei3kExRrI5730adLEuDAaS_P5gMdeYAiHOw4XGJXyKCvSpjRLrAeEY0zmiSkOXwsSgO1zczTODYGFQEA3Zed"},"type":"gym"}]"#,
             r#"[{"message":{"ar_scan_eligible":false,"description":"Murales raffigurante la carta napoletana asso di bastoni","enabled":true,"last_modified":1668262280,"latitude":45.45013,"longitude":9.146266,"lure_expiration":1668264080,"lure_id":501,"name":"Murales - Asso di bastoni","pokestop_id":"4062294d254143f5b0ebc1f09dae5f97.16","power_up_end_timestamp":0,"power_up_level":0,"power_up_points":0,"updated":1668262291,"url":"http://lh3.googleusercontent.com/w8_K_NJv-ZwvDJ8hbdRDthv_h_9KsMef_YAHueyYIsphT1eFh6XGTZiE0O6F3ZyHVqjTaZRbSPLWYu8Gcen0P7Et9WA"},"type":"pokestop"}]"#,
             r#"[{"message":{"capture_1":0.0,"capture_2":0.0,"capture_3":0.0,"costume":0,"cp":null,"disappear_time":1672227348,"disappear_time_verified":false,"display_pokemon_id":null,"encounter_id":"685561528964724898","first_seen":1672226148,"form":0,"gender":1,"height":null,"individual_attack":null,"individual_defense":null,"individual_stamina":null,"is_event":false,"last_modified_time":1672226148,"latitude":45.416035,"longitude":11.876916,"move_1":null,"move_2":null,"pokemon_id":712,"pokemon_level":null,"pokestop_id":"33bb3b4ace434340a53ecc48fc428b43.16","pvp":null,"seen_type":"nearby_stop","shiny":null,"size":null,"spawnpoint_id":"None","username":"p0k316475sp4w2","weather":0,"weight":null},"type":"pokemon"},{"message":{"capture_1":0.46389567852020264,"capture_2":0.6074689626693726,"capture_3":0.7125921845436096,"costume":0,"cp":431,"disappear_time":1672227347,"disappear_time_verified":false,"display_pokemon_id":null,"encounter_id":"14119025331338194993","first_seen":1672226147,"form":1598,"gender":1,"height":0.8364959955215454,"individual_attack":0,"individual_defense":2,"individual_stamina":4,"is_event":false,"last_modified_time":1672226149,"latitude":39.2235190385281,"longitude":9.15949649019382,"move_1":241,"move_2":248,"pokemon_id":363,"pokemon_level":20,"pokestop_id":"None","pvp":{"great":[{"cap":50,"competition_rank":1420,"cp":1493,"dense_rank":1160,"form":1601,"gender":1,"level":43.0,"ordinal_rank":1420,"percentage":0.9573293339893172,"pokemon":364,"rank":1420},{"cap":50,"competition_rank":420,"cp":1495,"dense_rank":256,"form":1604,"gender":1,"level":22.0,"ordinal_rank":421,"percentage":0.972954002181762,"pokemon":365,"rank":421}],"little":[{"cap":50,"competition_rank":1098,"cp":496,"dense_rank":654,"form":1598,"gender":1,"level":23.0,"ordinal_rank":1098,"percentage":0.9428252278636666,"pokemon":363,"rank":1098}],"ultra":[{"cap":50,"competition_rank":739,"cp":2500,"dense_rank":595,"form":1604,"gender":1,"level":44.0,"ordinal_rank":739,"percentage":0.9720935017883068,"pokemon":365,"rank":739}]},"seen_type":"encounter","shiny":false,"size":3,"spawnpoint_id":"73491787","username":"p0k311515sp4w2","weather":0,"weight":38.18540573120117},"type":"pokemon"}]"#,
+            r#"[{"message":{"banned":false,"creation_timestamp":1681396511,"disabled":false,"failed":"None","failed_timestamp":0,"first_warning_timestamp":0,"group":"clean","last_disabled":1686111599,"last_encounter_time":1686276966,"level":30,"spins":226,"suspended_message_acknowledged":false,"username":"p1k4035975sp4w2","warn":false,"warn_expire_timestamp":0,"warn_message_acknowledged":false,"was_suspended":false},"type":"account"}]"#,
         ];
         let mut weathers = Vec::new();
         for s in &strings {
