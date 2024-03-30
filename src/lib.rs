@@ -137,7 +137,17 @@ enum BoolOrInt {
     Int(u8),
 }
 
-fn bool_or_int<'de, D>(data: D) -> Result<Option<bool>, D::Error>
+fn bool_or_int<'de, D>(data: D) -> Result<bool, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    match BoolOrInt::deserialize(data)? {
+        BoolOrInt::Bool(b) => Ok(b),
+        BoolOrInt::Int(i) => Ok(i > 0),
+    }
+}
+
+fn bool_or_int_opt<'de, D>(data: D) -> Result<Option<bool>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -212,7 +222,7 @@ pub struct Pokemon {
     pub pvp: Option<HashMap<String, Vec<PvpRanking>>>,
     pub pvp_rankings_great_league: Option<Vec<PvpRanking>>,
     pub pvp_rankings_ultra_league: Option<Vec<PvpRanking>>,
-    #[serde(deserialize_with = "bool_or_int", default)]
+    #[serde(deserialize_with = "bool_or_int_opt", default)]
     pub is_event: Option<bool>,
     pub rarity: Option<u8>,
     pub seen_type: Option<String>,
@@ -351,7 +361,7 @@ pub struct Pokestop {
     #[serde(alias = "incident_grunt_type")]
     pub grunt_type: Option<u16>,
     #[serde(alias = "is_ar_scan_eligible")]
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub ar_scan_eligible: Option<bool>,
     pub power_up_end_timestamp: Option<u64>,
@@ -402,20 +412,21 @@ pub struct Gym {
     // pub lowest_pokemon_motivation: f64,
     pub raid_active_until: Option<i64>,
     #[serde(alias = "is_ex_raid_eligible")]
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub ex_raid_eligible: Option<bool>,
     #[serde(alias = "sponsor_od")]
     pub sponsor_id: Option<u8>,
     #[serde(alias = "is_ar_scan_eligible")]
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub ar_scan_eligible: Option<bool>,
     #[serde(alias = "is_in_battle")]
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub in_battle: Option<bool>,
-    pub partner_id: Option<u8>,
+    #[serde(deserialize_with = "string_or_int", default)]
+    pub partner_id: Option<String>,
     pub power_up_end_timestamp: Option<u64>,
     pub power_up_level: Option<u8>,
     pub power_up_points: Option<u8>,
@@ -486,21 +497,22 @@ pub struct GymDetails {
     // pokemon: Vec<GymPokemon>,
     pub guard_pokemon_id: Option<u16>,
     #[serde(alias = "is_in_battle")]
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub in_battle: Option<bool>,
     pub slots_available: u8,
     #[serde(alias = "is_ex_raid_eligible")]
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub ex_raid_eligible: Option<bool>,
     #[serde(alias = "sponsor_od")]
     pub sponsor_id: Option<u8>,
     #[serde(alias = "is_ar_scan_eligible")]
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub ar_scan_eligible: Option<bool>,
-    pub partner_id: Option<u8>,
+    #[serde(deserialize_with = "string_or_int", default)]
+    pub partner_id: Option<String>,
     pub power_up_end_timestamp: Option<u64>,
     pub power_up_level: Option<u8>,
     pub power_up_points: Option<u8>,
@@ -555,21 +567,24 @@ pub struct Raid {
     pub weather: Option<usize>,
     pub s2_cell_id: Option<usize>,
     #[serde(alias = "is_ex_raid_eligible")]
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub ex_raid_eligible: Option<bool>,
     pub form: Option<u16>,
+    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(default)]
     pub is_exclusive: bool,
     pub gender: Option<Gender>,
     #[serde(alias = "sponsor_od")]
     pub sponsor_id: Option<u8>,
     pub evolution: Option<u8>,
     #[serde(alias = "is_ar_scan_eligible")]
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub ar_scan_eligible: Option<bool>,
     pub costume: Option<u16>,
-    pub partner_id: Option<u8>,
+    #[serde(deserialize_with = "string_or_int", default)]
+    pub partner_id: Option<String>,
     pub power_up_end_timestamp: Option<u64>,
     pub power_up_level: Option<u8>,
     pub power_up_points: Option<u8>,
@@ -649,7 +664,7 @@ pub struct Quest {
     pub name: Option<String>,
     pub pokestop_name: String,
     #[serde(alias = "is_ar_scan_eligible")]
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub ar_scan_eligible: Option<bool>,
     #[serde(rename = "type")]
@@ -705,7 +720,7 @@ pub struct Weather {
     #[serde(deserialize_with = "string_or_int")]
     #[serde(default)]
     pub s2_cell_id: Option<String>,
-    #[serde(deserialize_with = "bool_or_int")]
+    #[serde(deserialize_with = "bool_or_int_opt")]
     #[serde(default)]
     pub day: Option<bool>,
 }
@@ -911,6 +926,7 @@ mod tests {
             r#"[{"message":{"capture_1":0.0,"capture_2":0.0,"capture_3":0.0,"costume":0,"cp":null,"disappear_time":1672227348,"disappear_time_verified":false,"display_pokemon_id":null,"encounter_id":"685561528964724898","first_seen":1672226148,"form":0,"gender":1,"height":null,"individual_attack":null,"individual_defense":null,"individual_stamina":null,"is_event":false,"last_modified_time":1672226148,"latitude":45.416035,"longitude":11.876916,"move_1":null,"move_2":null,"pokemon_id":712,"pokemon_level":null,"pokestop_id":"33bb3b4ace434340a53ecc48fc428b43.16","pvp":null,"seen_type":"nearby_stop","shiny":null,"size":null,"spawnpoint_id":"None","username":"p0k316475sp4w2","weather":0,"weight":null},"type":"pokemon"},{"message":{"capture_1":0.46389567852020264,"capture_2":0.6074689626693726,"capture_3":0.7125921845436096,"costume":0,"cp":431,"disappear_time":1672227347,"disappear_time_verified":false,"display_pokemon_id":null,"encounter_id":"14119025331338194993","first_seen":1672226147,"form":1598,"gender":1,"height":0.8364959955215454,"individual_attack":0,"individual_defense":2,"individual_stamina":4,"is_event":false,"last_modified_time":1672226149,"latitude":39.2235190385281,"longitude":9.15949649019382,"move_1":241,"move_2":248,"pokemon_id":363,"pokemon_level":20,"pokestop_id":"None","pvp":{"great":[{"cap":50,"competition_rank":1420,"cp":1493,"dense_rank":1160,"form":1601,"gender":1,"level":43.0,"ordinal_rank":1420,"percentage":0.9573293339893172,"pokemon":364,"rank":1420},{"cap":50,"competition_rank":420,"cp":1495,"dense_rank":256,"form":1604,"gender":1,"level":22.0,"ordinal_rank":421,"percentage":0.972954002181762,"pokemon":365,"rank":421}],"little":[{"cap":50,"competition_rank":1098,"cp":496,"dense_rank":654,"form":1598,"gender":1,"level":23.0,"ordinal_rank":1098,"percentage":0.9428252278636666,"pokemon":363,"rank":1098}],"ultra":[{"cap":50,"competition_rank":739,"cp":2500,"dense_rank":595,"form":1604,"gender":1,"level":44.0,"ordinal_rank":739,"percentage":0.9720935017883068,"pokemon":365,"rank":739}]},"seen_type":"encounter","shiny":false,"size":3,"spawnpoint_id":"73491787","username":"p0k311515sp4w2","weather":0,"weight":38.18540573120117},"type":"pokemon"}]"#,
             r#"[{"message":{"banned":false,"creation_timestamp":1681396511,"disabled":false,"failed":"None","failed_timestamp":0,"first_warning_timestamp":0,"group":"clean","last_disabled":1686111599,"last_encounter_time":1686276966,"level":30,"spins":226,"suspended_message_acknowledged":false,"username":"p1k4035975sp4w2","warn":false,"warn_expire_timestamp":0,"warn_message_acknowledged":false,"was_suspended":false},"type":"account"}]"#,
             r#"[{"message":{"capture_1":0,"capture_2":0,"capture_3":0,"costume":0,"cp":null,"disappear_time":1711737462,"disappear_time_verified":true,"display_pokemon_id":null,"encounter_id":"465932049974580453","first_seen":1711735874,"form":923,"gender":1,"height":null,"individual_attack":null,"individual_defense":null,"individual_stamina":null,"is_event":0,"last_modified_time":1711735874,"latitude":44.71926543257185,"longitude":11.227220570326525,"move_1":null,"move_2":null,"pokemon_id":302,"pokemon_level":null,"pokestop_id":"None","pvp":null,"seen_type":"wild","shiny":null,"size":null,"spawnpoint_id":"477fc7a5c77","username":"p0k338075sp4w2","weather":0,"weight":null},"type":"pokemon"}]"#,
+            r#"[{"message":{"alignment":0,"ar_scan_eligible":0,"costume":0,"cp":0,"end":1711830156,"evolution":0,"ex_raid_eligible":0,"form":0,"gender":0,"gym_id":"fff3a76d0700414fa35d73e46cc471c8.16","gym_name":"Madonna di Fatima","gym_url":"https://lh3.googleusercontent.com/1rDAgqI8UlApaKDlF2WqQ6iYYr5wJuKzBJTpE-Hda2vLrppE9x1ccB_VUte5859TwYQux1iIXQbVqa2sFa0mZY-ipA","is_exclusive":0,"latitude":45.421447,"level":13,"longitude":11.807944,"move_1":0,"move_2":0,"partner_id":"","pokemon_id":0,"power_up_end_timestamp":0,"power_up_level":0,"power_up_points":60,"spawn":1711823856,"sponsor_id":0,"start":1711827456,"team_id":2},"type":"raid"}]"#,
         ];
         let mut weathers = Vec::new();
         for s in &strings {
