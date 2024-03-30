@@ -51,6 +51,8 @@ where
     StopWatch(Box<Watch>),
     #[serde(rename = "device_tier")]
     DeviceTier(Box<DeviceTier>),
+    #[serde(rename = "fort_update")]
+    FortUpdate(Box<FortUpdate>),
 }
 
 pub trait RequestId: std::fmt::Debug {
@@ -82,6 +84,7 @@ where
             Request::StartWatch(_) => None,
             Request::StopWatch(_) => None,
             Request::DeviceTier(_) => None,
+            Request::FortUpdate(_) => None,
         }
     }
 }
@@ -870,6 +873,9 @@ pub struct DeviceTier {
 fn today() -> NaiveDate {
     Local::now().date_naive()
 }
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct FortUpdate {}
 
 #[cfg(test)]
 mod tests {
